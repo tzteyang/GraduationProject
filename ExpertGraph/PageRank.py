@@ -12,13 +12,15 @@ DATA_DIR = BASE_DIR + '/experts_ipcs_output/experts_ipcs_info.json'
 IPC_WRITE_DIR = BASE_DIR + '/experts_ipcs_output/ipcs_info.json'
 print(BASE_DIR)
 
+
 class page_rank:
 
     def __init__(self, Graph):
+        self.PersonalVector = None
         self.G = Graph
 
-    def personal_vector(self, topic: str): # 获取当前领域下的特征向量
-        topic = 'H01' # default
+    def personal_vector(self, topic: str):  # 获取当前领域下的特征向量
+        # topic = 'H01'  # default
         # 从本地读取当前领域的专利总数
         local_ipcs_info = {}
         with open(IPC_WRITE_DIR, 'r', encoding='utf-8') as f:
@@ -36,25 +38,27 @@ class page_rank:
         personal = {}
         for expert_ipc in experts_ipc_list:
             index += 1
-            for id, ipc_info in expert_ipc.items():
-                id = eval(id)
-                print(f'当前正在处理领域信息专家id: {id}, 进度 {index} / {len(experts_ipc_list)}')
+            for expert_id, ipc_info in expert_ipc.items():
+                expert_id = eval(expert_id)
+                # print(f'当前正在处理领域信息专家id: {expert_id}, 进度 {index} / {len(experts_ipc_list)}')
                 if topic in ipc_info:
-                    personal[id] = ipc_info[topic] / cur_topic_total
+                    personal[expert_id] = ipc_info[topic]
                 else:
-                    personal[id] = 0.0
+                    personal[expert_id] = 0
         # 返回当前领域下的每个点的个性化向量值
-        return personal
+        for ipc in local_ipcs_info.keys():
+            personal[ipc] = 0
 
-    def run(self):
-        # 根据当前图和p向量运行pagerank
+        self.PersonalVector = personal
 
-        N = len(G)
+    def run(self, alpha=0.85, personalization=None, max_iter=100, tol=1.0e-6, nstart=None, weight="weight", dangling=None):
+
+        N = len(self.G)
         if N == 0:
             return {}
 
-        nodelist = list(G)
-        A = nx.to_scipy_sparse_array(G, nodelist=nodelist, weight=weight, dtype=float)
+        nodelist = list(self.G)
+        A = nx.to_scipy_sparse_array(self.G, nodelist=nodelist, weight=weight, dtype=float)
         S = A.sum(axis=1)
         S[S != 0] = 1.0 / S[S != 0]
         # TODO: csr_array
@@ -74,7 +78,7 @@ class page_rank:
         else:
             p = np.array([personalization.get(n, 0) for n in nodelist], dtype=float)
             if p.sum() == 0:
-                raise ZeroDivisionError
+                raise ZeroDivisionError  # 除零错误
             p /= p.sum()
         # Dangling nodes
         if dangling is None:
@@ -84,15 +88,14 @@ class page_rank:
             dangling_weights = np.array([dangling.get(n, 0) for n in nodelist], dtype=float)
             dangling_weights /= dangling_weights.sum()
         is_dangling = np.where(S == 0)[0]
-
+        print('当前图的悬挂节点有:', is_dangling)
         # power iteration: make up to max_iter iterations
         for _ in range(max_iter):
-            xlast = x
+            x_last = x
             x = alpha * (x @ A + sum(x[is_dangling]) * dangling_weights) + (1 - alpha) * p
             # check convergence, l1 norm
-            err = np.absolute(x - xlast).sum()
+            err = np.absolute(x - x_last).sum()
             if err < N * tol:
                 return dict(zip(nodelist, map(float, x)))
         raise nx.PowerIterationFailedConvergence(max_iter)
-
-# page_rank(nx.Graph()).personal_vector("")
+        # 根据当前图和p向量运行pagerank

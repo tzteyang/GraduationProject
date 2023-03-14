@@ -18,13 +18,14 @@ print(BASE_DIR)
 
 G = nx.Graph()
 
+
 def generate_graph_by_collaborators(expert_id, collaborators: dict):
-    '''
+    """
     根据当前专家id和他的合作关系更新图
     :param expert_id:
     :param collaborators:
     :return:
-    '''
+    """
     if not G.has_node(expert_id):
         G.add_node(expert_id)
 
@@ -37,16 +38,18 @@ def generate_graph_by_collaborators(expert_id, collaborators: dict):
             co_times = len(co_info['times'])
             G.add_weighted_edges_from([(expert_id, co_id, co_times)])
 
+
 def generate_graph_by_ipc_relation(expert_id, relation_info: dict):
-    '''
+    """
     根据专家和领域的联系生成图
     :param expert_id:
     :param relation_info:
     :return:
-    '''
+    """
     for ipc_id, times in relation_info.items():
         if not G.has_edge(expert_id, ipc_id):
             G.add_weighted_edges_from([(expert_id, ipc_id, times)])
+
 
 def graph_get_run():
 
@@ -86,16 +89,15 @@ def graph_get_run():
 
     # for edge in G.edges(data='weight'):
     #     print("Edge:", edge)
-
+    nx.pagerank()
     # 将生成的图存入本地
     nx.write_gml(G, WRITE_DIR)
     # G_A = nx.adjacency_matrix(G).todense()
-    # fig = plt.figure(figsize=(14.4, 10.8))
     # nx.draw(G, with_labels=True, ax=fig.add_subplot(111),node_size=20, font_size=10)
     # plt.show()
 
-
     db.db_close()
+
 
 def test():
 
@@ -119,6 +121,7 @@ def test():
     #         print(ipc)
     #         count += 1
     # print(count)
+
 
 if __name__ == '__main__':
     test()
