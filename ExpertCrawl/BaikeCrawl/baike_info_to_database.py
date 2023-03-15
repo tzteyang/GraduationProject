@@ -7,6 +7,7 @@ import time
 
 current_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 
+
 def baike_to_database_run():
     try:
         conn = pymysql.connect(

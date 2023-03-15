@@ -92,15 +92,10 @@ def Cookies_get():
 
     window.browser_close()
 
+
 def linkedin_info_get_run(window, experts_list):
 
     write_path = BASE_DIR + f'/experts_info_{current_date}.json'
-
-    # experts_list = []
-    # with open(data_path,'r',encoding='utf-8') as f:
-    #     for line in f.readlines():
-    #         data_out = json.loads(line)
-    #         experts_list.append(data_out)
 
     for expert in experts_list:
 
@@ -122,10 +117,10 @@ def linkedin_info_get_run(window, experts_list):
         confirm_el.click()
 
         linkedin_info = {
-            'id': expert['id'],
-            'name': expert['name'],
-            'institute': expert['scholar_institute'],
-            'simply_institute': expert['simply_institute'],
+            'id': expert['inventor_id'],
+            'name': expert['inventor_name'],
+            'institute': expert['full_name'],
+            'simply_institute': expert['short_name'],
             'position': expert['linkedin_position'],
             'work_experience': [],
             'edu_experience': [],
@@ -171,12 +166,8 @@ def linkedin_info_get_run(window, experts_list):
                         user_info['address'] = temp_list[3] if len(temp_list) > 3 else ''
 
                         linkedin_info['work_experience'].append(user_info)
-
-
         except Exception as e:
             print("errException：", str(e))
-
-        # print(linkedin_info)
 
         try:
             edu_exp_list = window.browser.find_elements(By.XPATH, '//div[@data-testid="test-index-education-section"]')
@@ -207,40 +198,35 @@ def linkedin_info_get_run(window, experts_list):
                 linkedin_info['position'] = position_el
         except Exception as e:
             print("errException：", str(e))
-
         # print(f'\n{linkedin_info["name"]} {linkedin_info["institute"]} 信息已获取')
-        expert['scholar_job_info'] = linkedin_info['work_experience']
-        expert['scholar_history'] = linkedin_info['edu_experience']
-        expert['occupation'] = linkedin_info['position']
+        expert['work_experience'] = linkedin_info['work_experience']
+        expert['edu_experience'] = linkedin_info['edu_experience']
+        expert['position'] = linkedin_info['position']
         edu_list = linkedin_info['edu_experience']
         for edu_bg in edu_list:
             if 'degree' in edu_bg:
                 if '博士' in edu_bg['degree']:
-                    expert['edu_level'] = '博士'
+                    expert['edu_background'] = '博士'
                 elif 'Doctor' or 'doctor' in edu_bg['degree']:
-                    expert['edu_level'] = '博士'
+                    expert['edu_background'] = '博士'
                 elif '硕士' in edu_bg['degree']:
-                    expert['edu_level'] = '硕士'
+                    expert['edu_background'] = '硕士'
                 elif 'Master' or 'master' in edu_bg['degree']:
-                    expert['edu_level'] = '硕士'
+                    expert['edu_background'] = '硕士'
                 elif '本科' in edu_bg['degree']:
-                    expert['edu_level'] = '本科'
+                    expert['edu_background'] = '本科'
                 elif 'Bachelor' or 'bachelor' in edu_bg['degree']:
-                    expert['edu_level'] = '本科'
+                    expert['edu_background'] = '本科'
         # print(expert)
-        # print('='*30)
 
         data_in = json.dumps(linkedin_info, ensure_ascii=False)
-        with open(write_path,'a', encoding='utf-8') as f:
+        with open(write_path, 'a', encoding='utf-8') as f:
             f.write(data_in)
             f.write('\n')
 
 
 if __name__ == '__main__':
 
-    # 请在使用前获取新的cookie
-    # Cookies_get()
-    # linkedin_info_get_run()
     pass
 
 

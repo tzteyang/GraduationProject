@@ -1,22 +1,41 @@
 import pymysql
 
+
 class local_db:
 
-    def __init__(self, database):
-        try:
-            self.conn = pymysql.connect(
-                host='localhost',
-                port=3306,
-                user='root',
-                password='yang8302',
-                database=database,
-                cursorclass=pymysql.cursors.DictCursor,
-                charset='utf8',
-            )
-            self.cursor = self.conn.cursor()
-        except Exception as e:
-            print(e)
-            print('connect database wrong!!!')
+    def __init__(self, database, **kwargs):
+        self.datasource = kwargs.get('datasource')
+        if self.datasource == 'local':
+            try:
+                self.conn = pymysql.connect(
+                    host='localhost',
+                    port=3306,
+                    user='root',
+                    password='yang8302',
+                    database=database,
+                    cursorclass=pymysql.cursors.DictCursor,
+                    charset='utf8',
+                )
+                self.cursor = self.conn.cursor()
+            except Exception as e:
+                print(e)
+                print('connect database wrong!!!')
+
+        if self.datasource == 'suwen':
+            try:
+                self.conn = pymysql.connect(
+                    host='120.27.209.14',
+                    port=22936,
+                    user='yuqi',
+                    password='yuqi##123',
+                    database=database,
+                    cursorclass=pymysql.cursors.DictCursor,
+                    charset='utf8',
+                )
+                self.cursor = self.conn.cursor()
+            except Exception as e:
+                print(e)
+                print('connect database wrong!!!')
 
     def db_edit(self, sql):
         try:

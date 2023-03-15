@@ -85,23 +85,19 @@ def check_sim(s1, s2):
     
     return sim
 
+
 def search_expert(window, info: dict):
-    '''
-    专家必应搜索
-    :param window: 当前窗口
-    :param info: 专家信息
-    :return:
-    '''
     # 限制域名
     site = 'https://cn.linkedin.com/in'
 
     input_el = window.browser.find_elements(By.XPATH, '//*[@id="sb_form_q"]')[0]
 
-    search_statement = f"site:{site} {info['name']} {info['simply_institute']}"
+    search_statement = f"site:{site} {info['inventor_name']} {info['short_name']}"
 
     input_el.send_keys(search_statement)
     time_sleep(0.5, 1)
     input_el.send_keys(Keys.ENTER)
+
 
 def search_results_get(window, info: dict):
 
@@ -114,7 +110,7 @@ def search_results_get(window, info: dict):
             rank += 1
             #尝试请求
             try:
-                search_info = {"id": info["id"], "name": info["name"], 'institute': info["scholar_institute"], "simply_institute": info['simply_institute']}
+                search_info = {"id": info["inventor_id"], "name": info["inventor_name"], 'institute': info["full_name"], "simply_institute": info['short_name']}
                 # print(id(search_info))
                 title_el = bing_li.find_elements(By.XPATH, './/div[@class="b_title"]/h2/a')
                 abstract_el = bing_li.find_elements(By.XPATH, './/div[contains(@class,"b_vlist2col")]')
@@ -126,14 +122,14 @@ def search_results_get(window, info: dict):
                     name, company = el_text[0], el_text[-1]
                     position = el_text[1] if len(el_text) > 2 else ''
                     company = linkedin_bing_simply(company)
-                    en_name = zh_name_to_en_name(info['name'])
+                    en_name = zh_name_to_en_name(info['inventor_name'])
                     # print(en_name, name)
-                    if name != info['name'] and name != en_name:
+                    if name != info['inventor_name'] and name != en_name:
                         continue
                     # 消除一些无意义的称谓词
-                    info_company = info['simply_institute'].replace('控股','')
-                    info_company = info_company.replace('股份','')
-                    info_company = info_company.replace('中国','')
+                    info_company = info['short_name'].replace('控股', '')
+                    info_company = info_company.replace('股份', '')
+                    info_company = info_company.replace('中国', '')
 
                     sim = check_sim(info_company, company)
                     # print('\n' + '=' * 15 + '相似度' + '=' * 15)
@@ -164,6 +160,7 @@ def search_results_get(window, info: dict):
     # print('\n', search_results)
     return search_results
 
+
 def zh_name_to_en_name(s):
 
     name_list = lazy_pinyin(s)
@@ -176,19 +173,11 @@ def zh_name_to_en_name(s):
     en_name = ming + ' ' + xing
     return en_name.title().lstrip()
 
-def linkedin_url_get_run(window, experts_list):
 
+def linkedin_url_get_run(window, experts_list):
     # 当前路径的父路径
     data_path = BASE_DIR + '/experts_input.json'
-
     write_path = BASE_DIR + f'/experts_url_{current_date}.json'
-
-    # experts_list = []
-
-    # with open(data_path,'r',encoding='utf-8') as f:
-    #     for line in f.readlines():
-    #         data_out = json.loads(line)
-    #         experts_list.append(data_out)
 
     for expert in experts_list:
 
@@ -199,17 +188,15 @@ def linkedin_url_get_run(window, experts_list):
         url_results = search_results_get(window, expert)
 
         if url_results:
-            print('当前专家已获取')
+            print('\n当前专家领英url已获取')
             expert['linkedin_url'] = url_results[0]['url']
             expert['linkedin_position'] = url_results[0]['linkedin_position']
             data_in = json.dumps(url_results[0], ensure_ascii=False)
             with open(write_path, 'a', encoding='utf-8') as f:
                 f.write(data_in)
                 f.write('\n')
-    
-    # window.browser_close()
+
 
 if __name__ == '__main__':
-
     # linkedin_url_get_run()
     pass

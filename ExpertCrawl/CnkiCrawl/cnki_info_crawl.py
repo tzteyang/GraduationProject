@@ -10,12 +10,14 @@ from Levenshtein import ratio
 import re
 import os
 import pandas as pd
-
-current_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 import sys
 from pathlib import Path
+
+current_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 BASE_DIR = str(Path(__file__).resolve().parent)
 sys.path.append(BASE_DIR)
+WRITE_DIR = BASE_DIR + f'/experts_info_{current_date}.json'
+
 
 class selenium_entity():
 
@@ -24,7 +26,7 @@ class selenium_entity():
         self.url = kwargs.get('url')
         self.headless = kwargs.get('headless')
         self.options = webdriver.ChromeOptions()
-        self.options.add_experimental_option('detach', True)  #不自动关闭浏览器
+        self.options.add_experimental_option('detach', True)  # 不自动关闭浏览器
         if self.headless:
             self.options.add_argument('--headless')
             self.options.add_argument('--disable-gpu')
@@ -41,30 +43,12 @@ class selenium_entity():
 
         self.browser.close()
 
+
 def time_sleep(a, b):
-    '''
-    :param a:
-    :param b:
-    :return:
-    '''
     time.sleep(random.uniform(a, b))
 
-# def Cookies_read():
-#     '''
-#     :return: 本地读取cookie
-#     '''
-#     with open('login_cookies1.txt',mode='r') as f:
-#         Cookies = f.readline()
-#     return Cookies
-#
-# def Cookies_add(window):
-#
-#     Cookies = eval(Cookies_read())
-#     for cookie in Cookies:
-#         window.browser.add_cookie(cookie)
 
 def user_login(window, acc, pwd):
-
     # 每个用户每天只能查看200个学者的主页
     login_el = window.browser.find_elements(By.XPATH, '//span[@name="loginSpan"]/a[@id="link_login"]')[0]
     login_el.click()
@@ -77,44 +61,28 @@ def user_login(window, acc, pwd):
     confirm_el = window.browser.find_elements(By.XPATH, '//input[@id="submittext"]')[0]
     confirm_el.click()
 
-def user_exit(window):
 
+def user_exit(window):
     exit_el = window.browser.find_elements(By.XPATH, '//a[@class="exit"]')[0]
     exit_el.click()
     time_sleep(1, 1.5)
 
 
 def login_list_get():
-
     data_path = BASE_DIR + f'/cnki_login.json'
     with open(data_path, 'r', encoding='utf-8') as f:
         data_out = json.load(f)
 
     return data_out
 
-def cnki_info_get_run(window, experts_list, cur_index):
 
+def cnki_info_get_run(window, experts_list, cur_index):
     # 账号列表
     login_list = login_list_get()
 
-    # experts_list = []
-
-    # data_path = base_path + f'/ExpertCrawl/CnkiCrawl/experts_url_{current_date}.json'
-    write_path = BASE_DIR + f'/experts_info_{current_date}.json'
-
-    # with open(data_path,'r', encoding='utf-8') as f:
-    #     for line in f.readlines():
-    #         data_out = json.loads(line)
-    #         experts_list.append(data_out)
-
-    # window = selenium_entity(url='https://expert.cnki.net/', headless=True)
-    # window.browser_run(url='https://expert.cnki.net/')
-
     for expert in experts_list:
-
         p = cur_index // 200
-
-        # 每25个专家停一下 没200个专家切换一次账号
+        # 每200个专家切换一次账号
         if cur_index and cur_index % 200 == 0:
             # window.browser_close()
             time_sleep(5, 6)
@@ -126,10 +94,10 @@ def cnki_info_get_run(window, experts_list, cur_index):
             time_sleep(1, 1.5)
 
         cnki_info = {
-            'id': expert['id'],
-            'name': expert['name'],
-            'institute': expert['scholar_institute'],
-            'simply_institute': expert['simply_institute'],
+            'id': expert['inventor_id'],
+            'name': expert['inventor_name'],
+            'institute': expert['full_name'],
+            'simply_institute': expert['short_name'],
             'research_field': '',
             'domain': '',
             'download': 0,
@@ -137,17 +105,17 @@ def cnki_info_get_run(window, experts_list, cur_index):
             'url': expert['cnki_url']
         }
 
-        #url为空
+        # url为空
         if cnki_info['url'] == '':
             data_in = json.dumps(cnki_info, ensure_ascii=False)
-            with open(write_path, 'a', encoding='utf-8') as f:
+            with open(WRITE_DIR, 'a', encoding='utf-8') as f:
                 f.write(data_in)
                 f.write('\n')
             continue
 
         window.browser_run(url=expert['cnki_url'])
         # 等待时间过短会导致专家专利下载等信息未加载完毕
-        time_sleep(5, 6)
+        time_sleep(6, 7)
 
         research_field_list = window.browser.find_elements(By.XPATH, '//div[@id="headResearchField"]')
         cnki_info['research_field'] = research_field_list[0].text if research_field_list else ''
@@ -169,20 +137,19 @@ def cnki_info_get_run(window, experts_list, cur_index):
             print(f'Error: {cnki_info["name"]}-{cnki_info["institute"]}-页面获取失败')
             print('=' * 30)
 
-        expert['field'] = cnki_info['domain']
-        expert['paper_download_count'] = cnki_info['download']
-        expert['paper_quote_count'] = cnki_info['refer']
+        expert['research_field'] = cnki_info['research_field']
+        expert['domain'] = cnki_info['domain']
+        expert['download'] = cnki_info['download']
+        expert['refer'] = cnki_info['refer']
 
         data_in = json.dumps(cnki_info, ensure_ascii=False)
-        with open(write_path,'a', encoding='utf-8') as f:
+        with open(WRITE_DIR, 'a', encoding='utf-8') as f:
             f.write(data_in)
             f.write('\n')
 
-        print('\n',expert)
+        print('\n', expert)
         print('='*30)
-        time_sleep(2, 2.5)
+
 
 if __name__ == '__main__':
-
-    # cnki_info_get_run()
     pass

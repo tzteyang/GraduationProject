@@ -1,12 +1,14 @@
 from pyhanlp import HanLP
 import re
 
-def hanlp_segment(sentsnece):
+
+def hanlp_segment(sentence):
     """分词(去除括号)"""
-    sentsnece = re.sub(r'[(（].*?[)）]', '', sentsnece)
-    words = [str(item) for item in HanLP.segment(sentsnece)]
+    sentence = re.sub(r'[(（].*?[)）]', '', sentence)
+    words = [str(item) for item in HanLP.segment(sentence)]
     words = [item.split('/') for item in words]
     return words
+
 
 def get_short_name(name):
     words = hanlp_segment(name)

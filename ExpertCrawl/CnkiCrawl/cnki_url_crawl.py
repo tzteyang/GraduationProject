@@ -10,15 +10,18 @@ from lxml import etree
 import os
 import sys
 from pathlib import Path
+
+cnki_prefix = 'https://expert.cnki.net/'
+current_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 BASE_DIR = str(Path(__file__).resolve().parent)
 sys.path.append(BASE_DIR)
+WRITE_DIR = BASE_DIR + f'/experts_url_{current_date}.json'
 
 Agents = ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.76','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36']
 
 query_headers = {
-    # 'Cookie': 'Ecp_ClientId=b221231132700425170; Ecp_loginuserbk=SDSFDX; Ecp_ClientIp=27.192.36.17; Ecp_loginuserjf=15065629195; refRmbUser=true; refUserName=15065629195; refPassWord=yang8302; _pk_ref=["","",1673187840,"https://expert.cnki.net/"]; Ecp_Userid=1048946546; _pk_id=5291180d-215f-4c39-bbca-13666ef1cb04.1672464434.4.1673187844.1673187840.; ASP.NET_SessionId=f2lukbrkkzpfzwrmmgmhrkbt; SID=124001; Ecp_LoginStuts={"IsAutoLogin":false,"UserName":"15065629195","ShowName":"15065629195","UserType":"jf","BUserName":"","BShowName":"","BUserType":"","r":"VhBpu5","Members":[]}; LID=WEEvREcwSlJHSldTTEYySCtSNGRyakdnYlNKYlNCeTVjMzZzTUFtdlZ5UT0=$9A4hF_YAuvQ5obgVAqNKPCYcEjKensW4IQMovwHtwkF4VYPoHbKxJw!!; c_m_LinID=LinID=WEEvREcwSlJHSldTTEYySCtSNGRyakdnYlNKYlNCeTVjMzZzTUFtdlZ5UT0=$9A4hF_YAuvQ5obgVAqNKPCYcEjKensW4IQMovwHtwkF4VYPoHbKxJw!!&ot=01/09/2023 10:06:43; c_m_expire=2023-01-09 10:06:43',
     'User-Agent': random.choice(Agents),
-    "Referer":"https://expert.cnki.net/Search/AdvFind",
+    "Referer": "https://expert.cnki.net/Search/AdvFind",
 }
 
 info_headers = {
@@ -27,18 +30,15 @@ info_headers = {
     'Referer': 'https://expert.cnki.net/Search/AdvFind',
 }
 
-cnki_prefix = 'https://expert.cnki.net/'
-
-current_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 
 def get_value(html,path):
-
     try:
         value = html.xpath(path)[0]
-    except:
+    except Exception as e:
+        print(f'SearchError: {e}')
         value = ''
-
     return value
+
 
 def texsmart_query(q1, q2, q_alg):
 
@@ -58,6 +58,7 @@ def texsmart_query(q1, q2, q_alg):
     # print(r)
 
     return r['res_list'][0]['score']
+
 
 def expert_detail_query(expert_name, expert_company):
 
@@ -149,18 +150,19 @@ def expert_detail_query(expert_name, expert_company):
         'statNum_match_4': 3,
         'statNum_4': '',
         'X-Requested-With': 'XMLHttpRequest'
-} #post请求 form_data
+    }
+    # post请求 form_data
     html = ''
 
     try:
-        resp = requests.post(url=url, headers=query_headers,data=datas)
+        resp = requests.post(url=url, headers=query_headers, data=datas)
         html = etree.HTML(resp.text)
         resp.close()
     except Exception as e:
         print(f'Error: {e}')
         return None
 
-    mainpage_url = get_value(html,'//*[@id="findSearchPager"]/ul/li[1]//div[@class="el-link"]/span/a/@href')
+    mainpage_url = get_value(html, '//*[@id="findSearchPager"]/ul/li[1]//div[@class="el-link"]/span/a/@href')
     if mainpage_url == '':
         print(f'\n专家: {expert_name}-{expert_company}-全称检索失败')
         return None
@@ -168,8 +170,8 @@ def expert_detail_query(expert_name, expert_company):
 
     return mainpage_url
 
-def expert_detail_query2(expert_name, expert_company):
 
+def expert_detail_query2(expert_name, expert_company):
     url = 'https://expert.cnki.net/Search/AdvFindResult'
 
     expert_com = expert_company.strip('股份')
@@ -258,18 +260,19 @@ def expert_detail_query2(expert_name, expert_company):
         'statNum_match_4': 3,
         'statNum_4': '',
         'X-Requested-With': 'XMLHttpRequest'
-} #post请求 form_data
+    }
+    # post请求 form_data
     html = ''
 
     try:
-        resp = requests.post(url=url, headers=query_headers,data=datas)
+        resp = requests.post(url=url, headers=query_headers, data=datas)
         html = etree.HTML(resp.text)
         resp.close()
     except Exception as e:
         print(f'Error: {e}')
         return None
 
-    mainpage_url = get_value(html,'//*[@id="findSearchPager"]/ul/li[1]//div[@class="el-link"]/span/a/@href')
+    mainpage_url = get_value(html, '//*[@id="findSearchPager"]/ul/li[1]//div[@class="el-link"]/span/a/@href')
     if mainpage_url == '':
         print(f'\n专家: {expert_name}-{expert_company}-简称检索失败')
         return None
@@ -382,7 +385,7 @@ def expert_detail_query3(expert_name, expert_company):
     ul_xpath = '//*[@id="findSearchPager"]/ul'
     ul_list = html.xpath(ul_xpath)
 
-    if ul_list == []:
+    if not ul_list:
         return None
 
     link_list = []
@@ -390,20 +393,21 @@ def expert_detail_query3(expert_name, expert_company):
     for ul in ul_list:
         el_list = ul.xpath('.//div[@class="el-info"]/p/text()')
         el = '' if el_list == [] else el_list[0]
-        sim_rate = Levenshtein.ratio(el, expert_com)
-        el = el.strip('有限公司')
+        el = el.rstrip('有限公司')
+        el = el.rstrip('股份')
         el = el.lstrip('中国')
         expert_com = expert_com.lstrip('中国')
 
         esim_sim, linkage_sim = texsmart_query(el, expert_com, 'esim'), texsmart_query(el, expert_com, 'linkage')
         sim = 0.5 * esim_sim + 0.5 * linkage_sim
+        # ------相似度中间结果------
         print(el, expert_com, esim_sim, linkage_sim)
         print('=' * 30)
         if sim > 0.35:
             link = cnki_prefix + ul.xpath('.//div[@class="el-link"]//a/@href')[0]
             link_list.append((link, sim_rate))
-
-    if link_list == []:
+    print(link_list)
+    if not link_list:
         return None
 
     link_list.sort(key=lambda pair: pair[1], reverse=True)
@@ -414,40 +418,26 @@ def expert_detail_query3(expert_name, expert_company):
 
 def cnki_url_get_run(experts_list):
 
-    write_path = BASE_DIR + f'/experts_url_{current_date}.json'
-
-    # experts_list = []
-
-    # with open(data_path, 'r', encoding='utf-8') as f:
-    #     for line in f.readlines():
-    #         data_out = json.loads(line)
-    #         experts_list.append(data_out)
-
     for expert in experts_list:
 
-            id, expert_name, full_name, short_name = expert['id'], expert['name'], expert['scholar_institute'], expert['simply_institute']
+            id, expert_name, full_name, short_name = expert['inventor_id'], expert['inventor_name'], expert['full_name'], expert['short_name']
 
             info_url = {
                 'id': id, 'name': expert_name, 'institute': full_name, 'simply_institute': short_name, 'url': ''
             }
-            # print(info_url)
 
             query_result = expert_detail_query(expert_name, full_name)
-            if query_result != None:
+            if query_result is not None:
                 info_url['url'] = query_result
                 print(f'\n专家: {expert_name}-{full_name}-{query_result}主页地址获取成功')
             else:
-                time.sleep(random.uniform(1.5, 2))
-
                 query_result2 = expert_detail_query2(expert_name, short_name)
-                if query_result2 != None:
+                if query_result2 is not None:
                     info_url['url'] = query_result2
                     print(f'\n专家: {expert_name}-{short_name}-{query_result2}主页地址获取成功')
                 else:
-                    time.sleep(random.uniform(1.5, 2))
-
                     query_result3 = expert_detail_query3(expert_name, short_name)
-                    if query_result3 != None:
+                    if query_result3 is not None:
                         info_url['url'] = query_result3
                         print(f'\n专家: {expert_name}-{short_name}-{query_result3}主页地址获取成功')
                     else:
@@ -456,11 +446,10 @@ def cnki_url_get_run(experts_list):
             expert['cnki_url'] = info_url['url']
 
             data_in = json.dumps(info_url, ensure_ascii=False)
-            with open(write_path,'a', encoding='utf-8') as f:
+            with open(WRITE_DIR, 'a', encoding='utf-8') as f:
                 f.write(data_in)
                 f.write('\n')
 
-if __name__ == '__main__':
 
-    # cnki_url_get_run()
+if __name__ == '__main__':
     pass

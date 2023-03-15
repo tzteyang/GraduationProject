@@ -12,23 +12,16 @@ from tqdm import tqdm
 from pathlib import Path
 BASE_DIR = str(Path(__file__).resolve().parent)
 sys.path.append(BASE_DIR)
-# print(BASE_DIR)
-
 from utils.SeleniumInit import SeleniumInit
 from selenium.webdriver.common.by import By
 from utils.SentenceSimilarity import prompt_pretreatment, openai_query, get_key
-
 current_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-
 DATA_FILE = BASE_DIR + f'/output/baike_info_{current_date}.jsonl'
 
+
 def time_sleep(a, b):
-    """等待时间
-    Args:
-        a (float): _description_.
-        b (float): _description_.
-    """
     time.sleep(random.uniform(a, b))
+
 
 def get_el_text(el):
     """获取标签内容"""
@@ -40,8 +33,8 @@ def get_el_text(el):
         print("get_el_text_err：-->", str(e))
         return ''
 
-def texsmart_query(q1, q2, q_alg):
 
+def texsmart_query(q1, q2, q_alg):
     obj = {
         'text_pair_list': [{'str1': q1, 'str2': q2}],
         'options': {'alg': q_alg},
@@ -62,10 +55,8 @@ def texsmart_query(q1, q2, q_alg):
     print(e - s)
     return r['res_list'][0]['score']
 
+
 def get_word_info(selInit, scholar):
-    '''
-    获取词条信息
-    '''
     # 图集图像
     img_xpath = '//div[@class="summary-pic"]//img'
     # 现任职位
@@ -82,7 +73,7 @@ def get_word_info(selInit, scholar):
     # 定位basic信息
     base_info_dt_xpath = "//div[contains(@class, 'basic-info')]//dt"
     base_info_dd_xpath = "//div[contains(@class, 'basic-info')]//dd"
-    
+
     # 符合特征匹配，获取元素
     img_xpath_el = selInit.browser.find_elements(By.XPATH,img_xpath) # 图像
     intro_el = selInit.browser.find_elements(By.XPATH, intro_xpath) # 简介
@@ -97,8 +88,8 @@ def get_word_info(selInit, scholar):
         for index, item in enumerate(base_info_dt_el):
             b_title = get_el_text(item).replace(' ', '')
             b_res = get_el_text(base_info_dd_el[index])
-            scholar["data"]["base_info"].append({b_title:b_res})
-    title_el_list = selInit.browser.find_elements(By.XPATH, title_xpath) # 标题
+            scholar["data"]["base_info"].append({b_title: b_res})
+    title_el_list = selInit.browser.find_elements(By.XPATH, title_xpath)  # 标题
     # 获取任务简介
     if intro2_el:
         for el in intro2_el:
@@ -137,13 +128,14 @@ def get_word_info(selInit, scholar):
                     continue
     return scholar
 
-def check_word(selInit: object, scholar):
+
+def check_word(selInit, scholar):
     # 检查是否是多义词(默认选第一个)
     polysemy_xpath = '//li[contains(@class,"list-dot")]//a'
     polysemy_xpath_2 = '//div[contains(@class, "polysemant-list")]//li/a'
     polysemy_list = selInit.browser.find_elements(By.XPATH,polysemy_xpath)
     polysemy_list_2 = selInit.browser.find_elements(By.XPATH,polysemy_xpath_2)
-    
+
     # 定位百科内容
     content_xpath = "//div[@class='content-wrapper']"
     new_scholar_list = []
@@ -163,84 +155,100 @@ def check_word(selInit: object, scholar):
             for item in polysemy_list:
                 try:
                     if item:
-                        item_title = etree.HTML(item.get_attribute('innerHTML')).xpath('string(.)').replace(scholar["name"], '')
+                        item_title = etree.HTML(item.get_attribute('innerHTML')).xpath('string(.)').replace(scholar["inventor_name"], '')
                         url = etree.HTML(item.get_attribute('href')).xpath('string(.)')
                         # ------------------------gpt3.5-turbo匹配------------------------
-                        # candidates.append(item_title)
-                        # item2url[item_title] = url
+                        candidates.append(item_title)
+                        item2url[item_title] = url
 
                         # ------------------------texsmart匹配------------------------
-                        # print(item_title)
-                        company_name = scholar['scholar_institute'].strip('有限公司')
-                        company_name = scholar['scholar_institute'].strip('公司')
-                        flag = False
-                        if '中国科学院' in company_name or '中国科学院' in item_title:
-                            company_name = company_name.strip('中国科学院')
-                            item_title = item_title.strip('中国科学院')
-                            flag = True
-                        check_start = time.perf_counter()
-                        esim_sim, linkage_sim = texsmart_query(company_name, item_title, 'esim_sim'), texsmart_query(company_name, item_title, 'linkage')
-                        check_end = time.perf_counter()
-                        print(check_end - check_start)
-                        check_cost += check_end - check_start
-                        sim = esim_sim * 0.65 + linkage_sim * 0.35
-                        if sim <= 0.2:
-                            continue
-                        if sim <= 0.35 and flag: #含有中科院的内容 相似度要求高一些
-                            continue
-                        tmp_crawl_url_list.append((url,sim))
+                #         # print(item_title)
+                #         company_name = scholar['scholar_institute'].strip('有限公司')
+                #         company_name = scholar['scholar_institute'].strip('公司')
+                #         flag = False
+                #         if '中国科学院' in company_name or '中国科学院' in item_title:
+                #             company_name = company_name.strip('中国科学院')
+                #             item_title = item_title.strip('中国科学院')
+                #             flag = True
+                #         check_start = time.perf_counter()
+                #         esim_sim, linkage_sim = texsmart_query(company_name, item_title, 'esim_sim'), texsmart_query(company_name, item_title, 'linkage')
+                #         check_end = time.perf_counter()
+                #         print(check_end - check_start)
+                #         check_cost += check_end - check_start
+                #         sim = esim_sim * 0.65 + linkage_sim * 0.35
+                #         if sim <= 0.2:
+                #             continue
+                #         if sim <= 0.35 and flag: #含有中科院的内容 相似度要求高一些
+                #             continue
+                #         tmp_crawl_url_list.append((url,sim))
                 except Exception as e:
                     print("err：循环匹配多义词条出错--->", str(e))
                     continue
             # ------------------------gpt3.5-turbo匹配------------------------
-            # print(item2url)
-            # check_start = time.perf_counter()
-            # check_prompt = prompt_pretreatment(scholar['scholar_institute'], candidates)
-            # print(check_prompt)
-            # answer = openai_query(check_prompt, get_key())
-            # check_end = time.perf_counter()
-            # check_cost += check_end - check_start
-            # print(answer)
-
-            # ------------------------texsmart匹配------------------------
-            if tmp_crawl_url_list:
-                tmp_crawl_url_list.sort(key=lambda pair: pair[1], reverse=True)
-                fi = tmp_crawl_url_list[0] # fi => (url, sim_score)
-                # 有特征匹配上的词条，解析url 开始抽取
-                if fi[1] > 0.3:
-                    selInit.page_parse(url=fi[0])
+            print(item2url)
+            check_start = time.perf_counter()
+            check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
+            answer = openai_query(check_prompt, get_key())
+            print(answer)
+            # 处理gpt-api的返回结果
+            try:
+                return_json = eval(answer)
+                if return_json['code'] == 'succ':
+                    choose_sentence = return_json['sentence']
+                    choose_url = item2url[choose_sentence]
+                    selInit.page_parse(url=choose_url)
                     time_sleep(1, 2)
                     # TODO 抽取页面数据
                     new_scholar = get_word_info(selInit, scholar)
                     new_scholar_list.append(new_scholar)
-                # 根据页面相关摘要在此判断是否相关
                 else:
-                    selInit.page_parse(url=fi[0])
-                    time_sleep(1, 2)
-                    tmp_scholar = {'id': scholar['id'], 'name': scholar['name'], 'scholar_institute': scholar['scholar_institute'], 'simply_institute': scholar['simply_institute']}
-                    get_word_info(selInit, tmp_scholar)
-                    intro = tmp_scholar["data"]["intro"]
-                    q = f'当前任职于{tmp_scholar["scholar_institute"]}, 为其科研人员。'
-                    check_start = time.perf_counter()
-                    esim_sim, linkage_sim = texsmart_query(q, intro, 'esim'), texsmart_query(q, intro, 'linkage')
-                    check_end = time.perf_counter()
-                    print(check_end - check_start)
-                    check_cost += check_end - check_start
-                    sim = esim_sim
-                    print(scholar['name'], scholar['scholar_institute'], sim)
-                    if sim > 0.25:
-                        new_scholar_list.append(tmp_scholar)
-                    else:
-                        # 未有特征匹配上的词条，退出
-                        scholar["is_exist"] = 1
-                        scholar["log"] = "当前词条是多义词，未有词条匹配"
-                        new_scholar_list.append(scholar)
-            else:
-                # 未有特征匹配上的词条，退出
-                scholar["is_exist"] = 1
-                scholar["log"] = "当前词条是多义词，未有词条匹配"
-                new_scholar_list.append(scholar)
-                
+                    # 未有特征匹配上的词条，退出
+                    scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
+                    new_scholar_list.append(scholar)
+            except Exception as e:
+                print(f'gpt返回结果格式错误: {answer}\n'+str(e))
+            check_end = time.perf_counter()
+            check_cost += check_end - check_start
+
+            # ------------------------texsmart匹配------------------------
+            # if tmp_crawl_url_list:
+            #     tmp_crawl_url_list.sort(key=lambda pair: pair[1], reverse=True)
+            #     fi = tmp_crawl_url_list[0] # fi => (url, sim_score)
+            #     # 有特征匹配上的词条，解析url 开始抽取
+            #     if fi[1] > 0.3:
+            #         selInit.page_parse(url=fi[0])
+            #         time_sleep(1, 2)
+            #         # TODO 抽取页面数据
+            #         new_scholar = get_word_info(selInit, scholar)
+            #         new_scholar_list.append(new_scholar)
+            #     # 根据页面相关摘要在此判断是否相关
+            #     else:
+            #         selInit.page_parse(url=fi[0])
+            #         time_sleep(1, 2)
+            #         tmp_scholar = {'id': scholar['id'], 'name': scholar['name'], 'scholar_institute': scholar['scholar_institute'], 'simply_institute': scholar['simply_institute']}
+            #         get_word_info(selInit, tmp_scholar)
+            #         intro = tmp_scholar["data"]["intro"]
+            #         q = f'当前任职于{tmp_scholar["scholar_institute"]}, 为其科研人员。'
+            #         check_start = time.perf_counter()
+            #         esim_sim, linkage_sim = texsmart_query(q, intro, 'esim'), texsmart_query(q, intro, 'linkage')
+            #         check_end = time.perf_counter()
+            #         print(check_end - check_start)
+            #         check_cost += check_end - check_start
+            #         sim = esim_sim
+            #         print(scholar['name'], scholar['scholar_institute'], sim)
+            #         if sim > 0.25:
+            #             new_scholar_list.append(tmp_scholar)
+            #         else:
+            #             # 未有特征匹配上的词条，退出
+            #             scholar["is_exist"] = 1
+            #             scholar["log"] = "当前词条是多义词，未有词条匹配"
+            #             new_scholar_list.append(scholar)
+            # else:
+            #     # 未有特征匹配上的词条，退出
+            #     scholar["is_exist"] = 1
+            #     scholar["log"] = "当前词条是多义词，未有词条匹配"
+            #     new_scholar_list.append(scholar)
+
         if polysemy_list_2:
             # ==> 直接进入词条页面，但还是多义词的情况
             # TODO 先匹配当前页全文，查看是否符合特征
@@ -254,162 +262,70 @@ def check_word(selInit: object, scholar):
             candidates = []
             item2url[cur_title] = cur_url
             candidates.append(cur_title)
-
-            # ------------------------texsmart匹配------------------------
-            tmp_crawl_url_list = []
-
-            company_name = scholar['scholar_institute'].strip('有限公司')
-            company_name = scholar['scholar_institute'].strip('公司')
-
-            flag = False
-            if '中国科学院' in company_name or '中国科学院' in cur_title:
-                company_name = company_name.strip('中国科学院')
-                cur_title = cur_title.strip('中国科学院')
-                flag = True
-            check_start = time.perf_counter()
-            esim_sim, linkage_sim = texsmart_query(company_name, cur_title, 'esim_sim'), texsmart_query(company_name,cur_title,'linkage')
-            check_end = time.perf_counter()
-            check_cost += check_end - check_start
-            print(check_end - check_start)
-            sim = esim_sim * 0.65 + linkage_sim * 0.35
-            if (sim >= 0.25 and not flag) or (sim > 0.35 and flag):
-                tmp_crawl_url_list.append((cur_url, sim))
-
             # 遍历其他多义词条
             for item in polysemy_list_2:
                 try:
                     if item:
-                        item_title = etree.HTML(item.get_attribute('innerHTML')).xpath('string(.)').replace(scholar["name"], '')
+                        item_title = etree.HTML(item.get_attribute('innerHTML')).xpath('string(.)').replace(scholar["inventor_name"], '')
                         url = etree.HTML(item.get_attribute('href')).xpath('string(.)')
                         # ------------------------gpt3.5-turbo匹配------------------------
-                        # item2url[item_title] = url
-                        # candidates.append(item_title)
-
-                        # ------------------------texsmart匹配------------------------
-                        print(item_title)
-                        check_start = time.perf_counter()
-                        esim_sim, linkage_sim = texsmart_query(company_name, item_title, 'esim_sim'), texsmart_query(company_name, item_title, 'linkage')
-                        check_end = time.perf_counter()
-                        check_cost += check_end - check_start
-                        print(check_end - check_start)
-                        sim = esim_sim * 0.65 + linkage_sim * 0.35
-                        if sim <= 0.2: # 一般可能会牵扯到研究所人员 有多个指代职称
-                            continue
-                        if sim < 0.35 and flag:
-                            continue
-                        tmp_crawl_url_list.append((url, sim))
+                        item2url[item_title] = url
+                        candidates.append(item_title)
                 except Exception as e:
                     print("err：循环匹配多义词条出错--->", str(e))
                     continue
             # ------------------------gpt3.5-turbo匹配------------------------
-            # print(item2url)
-            #
-            # check_start = time.perf_counter()
-            # check_prompt = prompt_pretreatment(scholar['scholar_institute'], candidates)
-            # print(check_prompt)
-            # answer = openai_query(check_prompt, get_key())
-            # check_end = time.perf_counter()
-            # check_cost += check_end - check_start
-            # print(answer)
-
-            # ------------------------texsmart匹配------------------------
-            print(tmp_crawl_url_list)
-            if tmp_crawl_url_list:
-                tmp_crawl_url_list.sort(key=lambda pair: pair[1], reverse=True)
-                fi = tmp_crawl_url_list[0]  # fi => (url, sim_score)
-                # 有特征匹配上的词条，解析url 开始抽取
-                if fi[1] > 0.3:
-                    selInit.page_parse(url=fi[0])
+            print(item2url)
+            check_start = time.perf_counter()
+            check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
+            print(check_prompt)
+            answer = openai_query(check_prompt, get_key())
+            # 处理gpt-api的返回结果
+            try:
+                return_json = eval(answer)
+                if return_json['code'] == 'succ':
+                    choose_sentence = return_json['sentence']
+                    choose_url = item2url[choose_sentence]
+                    selInit.page_parse(url=choose_url)
                     time_sleep(1, 2)
                     # TODO 抽取页面数据
                     new_scholar = get_word_info(selInit, scholar)
-                    # print(new_scholar)
                     new_scholar_list.append(new_scholar)
-                # 根据页面相关摘要在此判断是否相关
                 else:
-                    selInit.page_parse(url=fi[0])
-                    time_sleep(1, 2)
-                    tmp_scholar = {'id': scholar['id'], 'name': scholar['name'], 'scholar_institute': scholar['scholar_institute'], 'simply_institute': scholar['simply_institute']}
-                    # print(id(tmp_scholar), id(scholar))
-                    get_word_info(selInit, tmp_scholar)
-                    # print(tmp_scholar)
-                    # print('=' * 30)
-                    # print(scholar)
-                    intro = tmp_scholar["data"]["intro"]
-                    q = f'当前任职于{tmp_scholar["scholar_institute"]}, 为其科研人员。'
-                    check_start = time.perf_counter()
-                    esim_sim = texsmart_query(q, intro, 'esim')
-                    check_end = time.perf_counter()
-                    check_cost += check_end - check_start
-                    print(check_end - check_start)
-                    sim = esim_sim
-                    print(scholar['name'], scholar['scholar_institute'], sim)
-                    if sim > 0.25:
-                        new_scholar_list.append(tmp_scholar)
-                    else:
-                        # 未有特征匹配上的词条，退出
-                        scholar["is_exist"] = 1
-                        scholar["log"] = "当前词条是多义词，未有词条匹配"
-                        new_scholar_list.append(scholar)
-            else:
-                # 未有特征匹配上的词条，退出
-                scholar["is_exist"] = 1
-                scholar["log"] = "当前词条是多义词，未有词条匹配"
-                new_scholar_list.append(scholar)
-    else:
-        # 单义词
-        # TODO 根据关键词匹配全文，查看是否符合特征
+                    # 未有特征匹配上的词条，退出
+                    scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
+                    new_scholar_list.append(scholar)
+            except Exception as e:
+                print(f'gpt返回结果格式错误: {answer}\n' + str(e))
+            check_end = time.perf_counter()
+            check_cost += check_end - check_start
 
+    else:
+        # TODO 单义词 查看是否符合特征
         cur_title_xpath = '//div[@class="lemma-desc"]'
         cur_title_el = selInit.browser.find_elements(By.XPATH, cur_title_xpath)
         cur_title = get_el_text(cur_title_el[0]) if cur_title_el else ''
 
         # ------------------------gpt3.5-turbo匹配------------------------
-        # candidates = [cur_title]
-        # check_start = time.perf_counter()
-        # check_prompt = prompt_pretreatment(scholar['scholar_institute'], candidates)
-        # print(check_prompt)
-        # answer = openai_query(check_prompt, get_key())
-        # check_end = time.perf_counter()
-        # check_cost += check_end - check_start
-        # print(answer)
-        # ------------------------texsmart匹配------------------------
-        company_name = scholar['scholar_institute'].strip('有限公司')
-        company_name = scholar['scholar_institute'].strip('公司')
-
-        flag = False
-        if '中国科学院' in company_name or '中国科学院' in cur_title:
-            company_name = company_name.strip('中国科学院')
-            item_title = cur_title.strip('中国科学院')
-            flag = True
+        candidates = [cur_title]
         check_start = time.perf_counter()
-        esim_sim, linkage_sim = texsmart_query(company_name, cur_title, 'esim_sim'), texsmart_query(company_name, cur_title, 'linkage')
-        check_end = time.perf_counter()
-        check_cost += check_end - check_start
-        print(check_end - check_start)
-        sim = esim_sim * 0.65 + linkage_sim * 0.35
-
-        if sim > 0.3:
-            new_scholar = get_word_info(selInit, scholar)
-            new_scholar_list.append(new_scholar)
-        else:
-            intro_xpath = '//div[@class="lemma-summary"]'
-            intro_el = selInit.browser.find_elements(By.XPATH, intro_xpath)  # 简介
-            intro = get_el_text(intro_el[0]) if intro_el else ''
-            q = f'当前任职于{scholar["scholar_institute"]}, 为其科研人员。'
-            check_start = time.perf_counter()
-            esim_sim = texsmart_query(q, intro, 'esim')
-            check_end = time.perf_counter()
-            check_cost += check_end - check_start
-            print(check_end - check_start)
-            sim = esim_sim
-            if (sim > 0.25 and not flag) or (sim > 0.35 and flag):
+        check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
+        answer = openai_query(check_prompt, get_key())
+        # 处理gpt-api的返回结果
+        try:
+            return_json = eval(answer)
+            if return_json['code'] == 'succ':
+                choose_sentence = return_json['sentence']
+                time_sleep(1, 2)
+                # TODO 抽取页面数据
                 new_scholar = get_word_info(selInit, scholar)
                 new_scholar_list.append(new_scholar)
             else:
-                scholar["is_exist"] = 1
-                scholar["log"] = "当前词条是单义词，未有词条匹配"
+                # 未有特征匹配上的词条，退出
+                scholar["baike_search_log"] = "当前词条是单义词，未有词条匹配"
                 new_scholar_list.append(scholar)
+        except Exception as e:
+            print(f'gpt返回结果格式错误: {answer}\n' + str(e))
 
     end = time.perf_counter()
     list_cost = end - start
@@ -418,6 +334,7 @@ def check_word(selInit: object, scholar):
     print('=' * 30 + '查询相似度耗时' + '=' * 30)
     print(check_cost)
 
+    print(new_scholar_list)
     return new_scholar_list
 
 
@@ -425,9 +342,10 @@ def query_word(scholar, selInit):
     """查询词条"""
     query_input_el = selInit.browser.find_elements(By.XPATH, '//input[@id="query"]')
     search_el = selInit.browser.find_elements(By.XPATH, '//button[@id="search"]')
-    query_input_el[0].send_keys(scholar["name"])  # 动作：输入
+    query_input_el[0].send_keys(scholar["inventor_name"])  # 动作：输入
     time_sleep(1, 2)
     selInit.browser.execute_script("arguments[0].click();", search_el[0])
+
 
 def insert_data(info_list):
     """数据写入"""
@@ -435,6 +353,7 @@ def insert_data(info_list):
     for info in info_list:
         with jsonlines.open(DATA_FILE, 'a') as f:
             f.write(info)
+
 
 def baike_info_get_run(experts_list):
     # print("@@ 百度百科专家数据爬取")
@@ -446,19 +365,12 @@ def baike_info_get_run(experts_list):
     scholar_list = []
     for expert in experts_list:
         scholar_list.append(expert)
-    print(id(experts_list), id(scholar_list))
-
-    # with open(data_path,'r',encoding='utf-8') as f:
-
-        # for line in f.readlines():
-            # data_out = json.loads(line)
-            # scholar_list.append(data_out)
+    # print(id(experts_list), id(scholar_list))
     # 数据入口文件
     # scholar_list = list(jsonlines.open(BASE_DIR + '/temp_scholar.jsonl'))
     selInit = SeleniumInit()
-    for expert, scholar in zip(experts_list,scholar_list):
-        print(f"\n当前进度：{scholar_list.index(scholar) + 1} / {len(scholar_list)}")
-        print(scholar)
+    for expert, scholar in zip(experts_list, scholar_list):
+        print(f"\n当前进度处理专家\n：{expert}")
         # 解析url
         selInit.page_parse(url=url)
         # 搜索专家
@@ -468,69 +380,70 @@ def baike_info_get_run(experts_list):
         print(cur_url)
         # TODO 词条未被收录，退出
         if 'none?' in cur_url:
-            print(f"词条 {scholar['name']} 未被收录！")
-            scholar_info_list = [{"id": scholar["id"], "name": scholar['name'], "scholar_institute": scholar["scholar_institute"], "simply_institute": scholar["simply_institute"], "is_exist": 0, "log":"当前词条未被收录"}]
+            print(f"词条 {scholar['inventor_name']} 未被收录！")
+            scholar_info_list = [{"inventor_id": scholar["inventor_id"], "inventor_name": scholar['inventor_name'], "full_name": scholar["full_name"], "short_name": scholar["short_name"], "baike_search_log": "当前词条未被收录"}]
+            expert['baike_info'] = ''
+            expert['baike_search_log'] = '当前词条未被收录'
             insert_data(scholar_info_list)
             continue
         # TODO 有词条收录，待匹配
         scholar_info_list = check_word(selInit, scholar)
         # TODO 百科数据向补充写入
         if 'data' in scholar:
-            expert['baike_json'] = scholar['data']
+            expert['baike_info'] = scholar['data']
             expert.pop('data', None)
-            if 'base_info' in expert['baike_json']:
-                table_info = expert['baike_json']['base_info']
+            if 'base_info' in expert['baike_info']:
+                table_info = expert['baike_info']['base_info']
                 for info in table_info:
                     if '国籍' in info:
                         expert['nationality'] = info['国籍']
                     if '毕业院校' in info:
                         expert['graduate_university'] = info['毕业院校']
                     if '职称' in info:
-                        expert['occupation'] = info['职称']
+                        expert['position'] = info['职称']
                     if '学历' in info:
-                        expert['edu_level'] = info['学历']
+                        expert['edu_background'] = info['学历']
                     elif '学位/学历' in info:
-                        expert['edu_level'] = info['学位/学历']
+                        expert['edu_background'] = info['学位/学历']
 
-            if 'intro' in expert['baike_json'] and expert['baike_json']['intro'] != '':
-                expert['scholar_brief_info'] = expert['baike_json']['intro']
-            if 'occupation' in expert['baike_json'] and expert['baike_json']['occupation'] != '':
-                expert['occupation'] = expert['baike_json']['occupation']
+            if 'intro' in expert['baike_info'] and expert['baike_info']['intro'] != '':
+                expert['cv'] = expert['baike_info']['intro']
+            if 'occupation' in expert['baike_info'] and expert['baike_info']['occupation'] != '':
+                expert['position'] = expert['baike_info']['occupation']
 
-            if '研究方向' in expert['baike_json'] and expert['baike_json']['研究方向'] != '':
-                expert['field'] = expert['baike_json']['研究方向']
-            elif '研究领域' in expert['baike_json'] and expert['baike_json']['研究领域'] != '':
-                expert['field'] = expert['baike_json']['研究领域']
-            elif '主要研究方向' in expert['baike_json'] and expert['baike_json']['主要研究方向'] != '':
-                expert['field'] = expert['baike_json']['主要研究方向']
+            if '研究方向' in expert['baike_info'] and expert['baike_info']['研究方向'] != '':
+                expert['research_field'] = expert['baike_info']['研究方向']
+            elif '研究领域' in expert['baike_info'] and expert['baike_info']['研究领域'] != '':
+                expert['research_field'] = expert['baike_info']['研究领域']
+            elif '主要研究方向' in expert['baike_info'] and expert['baike_info']['主要研究方向'] != '':
+                expert['research_field'] = expert['baike_info']['主要研究方向']
 
-            if '个人经历' in expert['baike_json'] and expert['baike_json']['个人经历'] != '':
-                expert['scholar_history'] = expert['baike_json']['个人经历']
-            elif '人物经历' in expert['baike_json'] and expert['baike_json']['人物经历'] != '':
-                expert['scholar_history'] = expert['baike_json']['人物经历']
+            if '个人经历' in expert['baike_info'] and expert['baike_info']['个人经历'] != '':
+                expert['expert_experience'] = expert['baike_info']['个人经历']
+            elif '人物经历' in expert['baike_info'] and expert['baike_info']['人物经历'] != '':
+                expert['expert_experience'] = expert['baike_info']['人物经历']
 
-            if '主要成就' in expert['baike_json'] and expert['baike_json']['主要成就'] != '':
-                expert['major_achievement_list'] = expert['baike_json']['主要成就']
-            elif '学术成果' in expert['baike_json'] and expert['baike_json']['学术成果'] != '':
-                expert['major_achievement_list'] = expert['baike_json']['学术成果']
-            elif '主要贡献' in expert['baike_json'] and expert['baike_json']['主要贡献'] != '':
-                expert['major_achievement_list'] = expert['baike_json']['主要贡献']
-            elif '主要成果' in expert['baike_json'] and expert['baike_json']['主要成果'] != '':
-                expert['major_achievement_list'] = expert['baike_json']['主要成果']
+            if '主要成就' in expert['baike_info'] and expert['baike_info']['主要成就'] != '':
+                expert['achievements'] = expert['baike_info']['主要成就']
+            elif '学术成果' in expert['baike_info'] and expert['baike_info']['学术成果'] != '':
+                expert['achievements'] = expert['baike_info']['学术成果']
+            elif '主要贡献' in expert['baike_info'] and expert['baike_info']['主要贡献'] != '':
+                expert['achievements'] = expert['baike_info']['主要贡献']
+            elif '主要成果' in expert['baike_info'] and expert['baike_info']['主要成果'] != '':
+                expert['achievements'] = expert['baike_info']['主要成果']
 
-            if '获奖记录' in expert['baike_json'] and expert['baike_json']['获奖记录'] != '':
-                expert['scholar_title'] = expert['baike_json']['获奖记录']
-            elif '荣誉' in expert['baike_json'] and expert['baike_json']['荣誉'] != '':
-                expert['scholar_title'] = expert['baike_json']['荣誉']
-            elif '学术兼职：' in expert['baike_json'] and expert['baike_json']['学术兼职：'] != '':
-                expert['scholar_title'] = expert['baike_json']['学术兼职：']
+            if '获奖记录' in expert['baike_info'] and expert['baike_info']['获奖记录'] != '':
+                expert['awards'] = expert['baike_info']['获奖记录']
+            elif '荣誉' in expert['baike_info'] and expert['baike_info']['荣誉'] != '':
+                expert['awards'] = expert['baike_info']['荣誉']
+            elif '学术兼职：' in expert['baike_info'] and expert['baike_info']['学术兼职：'] != '':
+                expert['awards'] = expert['baike_info']['学术兼职：']
 
         insert_data(scholar_info_list)
         print('=' * 30)
 
     selInit.close_browser()
 
-# 不定时的会出现几个词条跳转的其他词条的情况 导致信息缺失
 
 if __name__ == '__main__':
     # baike_info_get_run()

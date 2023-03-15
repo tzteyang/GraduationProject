@@ -1,9 +1,3 @@
-import sys
-from pathlib import Path
-BASE_DIR = str(Path(__file__).resolve().parent)
-sys.path.append(BASE_DIR)
-# 导入专家类
-import jsonlines
 # 导入信息爬取函数
 from utils.selenium_tool import selenium_entity
 from LinkedinCrawl.linkedin_url_crawl import linkedin_url_get_run
@@ -13,22 +7,35 @@ from SinaCrawl.sina_info_get import sina_info_get_run
 from CnkiCrawl.cnki_url_crawl import cnki_url_get_run
 from CnkiCrawl.cnki_info_crawl import cnki_info_get_run, login_list_get, user_login, user_exit
 from BaikeCrawl.baike_info_crawl import baike_info_get_run
+from ExpertGraph.utils.db_conn import local_db
 
-#导入信息入库函数
-
+import jsonlines
 import time
 from tqdm import tqdm
 import json
 
-class ExpertBusinessCrawl:
-    def __init__(self, file, s_file) -> None:
-        self.exp_json = list(jsonlines.open(file))
+
+class ExpertCrawlRun:
+
+    def __init__(self, s_file):
+        self.data_list = []
+        db = local_db(database='report', datasource='local')
+        sql = """
+            select inventor_id, inventor_name, full_name, short_name
+            from inventors_company
+            order by T_index desc 
+            limit 20
+            offset 0
+        """
+        print('专家列表获取中......')
+        self.data_list = db.query_all(sql)
+        print('专家列表获取完毕!!!')
+        db.db_close()
         self.save_file = s_file
     
     def fetch_expert_info(self):
         # 获取专家列表
-        expert_list = self.exp_json
-
+        expert_list = self.data_list
         # 计时函数
         start = time.perf_counter()
         # 信息源耗时函数
@@ -65,8 +72,8 @@ class ExpertBusinessCrawl:
             cnki_end = time.perf_counter()
             cnki_cost += cnki_end - cnki_start
             #
-            # # 新浪源数据库匹配
-            # # sina_info_get_run([expert])
+            # 新浪源数据库匹配
+            sina_info_get_run([expert])
 
             baike_start = time.perf_counter()
             # 百度百科爬取
@@ -98,11 +105,11 @@ class ExpertBusinessCrawl:
         bh, bm, bs = baike_cost // 3600, (baike_cost % 3600) // 60, baike_cost % 60
         print(f'百科运行耗时: {bh}h{bm}min{bs}s')
 
-
     def data_write(self, data: dict):
         # data_in = json.dumps(data, ensure_ascii=False)
         with jsonlines.open(self.save_file, 'a') as f:
             f.write(data)
+
 
 if __name__ == '__main__':
     pass

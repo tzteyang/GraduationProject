@@ -10,6 +10,8 @@ from selenium.webdriver.chrome.options import Options
 
 ua = UserAgent()
 print(ua)
+
+
 class SeleniumInit():
     """
     :selenium初始化

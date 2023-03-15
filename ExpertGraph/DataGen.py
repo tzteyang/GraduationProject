@@ -50,13 +50,9 @@ def data_preprocess(expert_id, pantents_ipcs: dict, ipcs_count_info: dict):
 
 
 def data_get_run():
-    '''
-    数据处理
-    :return:
-    '''
-    db = local_db(database='report')
+    db = local_db(database='report', datasource='local')
 
-    records = 35580 #创建图的专家数
+    records = 35580  # 创建图的专家数
     experts_get_sql = f'''
             select inventor_id, patents_ipcs
             from inventors
