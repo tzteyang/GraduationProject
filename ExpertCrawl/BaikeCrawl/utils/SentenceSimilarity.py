@@ -6,7 +6,7 @@ import time
 
 
 def get_key():
-    return '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'
+    return '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'
 
 
 def prompt_pretreatment(query: str, candidates: list):
