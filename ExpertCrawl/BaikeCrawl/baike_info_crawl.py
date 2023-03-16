@@ -12,14 +12,20 @@ from tqdm import tqdm
 from pathlib import Path
 BASE_DIR = str(Path(__file__).resolve().parent)
 sys.path.append(BASE_DIR)
+from utils.SentenceTransformer.SentenceSim import top5_sim_sentence
 from utils.SeleniumInit import SeleniumInit
 from selenium.webdriver.common.by import By
-from utils.SentenceSimilarity import prompt_pretreatment, openai_query, get_key
+# from utils.SentenceSimilarity import prompt_pretreatment, openai_query, get_key
 current_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 DATA_FILE = BASE_DIR + f'/output/baike_info_{current_date}.jsonl'
 
 
 def time_sleep(a, b):
+    """等待时间
+    Args:
+        a (float): _description_.
+        b (float): _description_.
+    """
     time.sleep(random.uniform(a, b))
 
 
@@ -27,7 +33,7 @@ def get_el_text(el):
     """获取标签内容"""
     try:
         # 正则去除字符串中的引用部分
-        tmp_str = re.sub('\[\d\]', '', etree.HTML(el.get_attribute('innerHTML')).xpath('string(.)').replace('\n', '').replace('\xa0', ''))
+        tmp_str = re.sub('\[\d\]', '', etree.HTML(el.get_attribute('innerHTML')).xpath('string(.)').replace('\n', '').replace('\xa0',''))
         return tmp_str
     except Exception as e:
         print("get_el_text_err：-->", str(e))
@@ -35,13 +41,13 @@ def get_el_text(el):
 
 
 def texsmart_query(q1, q2, q_alg):
+    time_sleep(0.5, 1)
     obj = {
         'text_pair_list': [{'str1': q1, 'str2': q2}],
         'options': {'alg': q_alg},
         'echo_data': {'id': 123}
     }
 
-    s = time.perf_counter()
     reg_str = json.dumps(obj).encode()
     url = "https://texsmart.qq.com/api/match_text"
     r = requests.post(url, data=reg_str).json()
@@ -51,12 +57,13 @@ def texsmart_query(q1, q2, q_alg):
         r = requests.post(url, data=reg_str).json()
         ret_code = r["header"]["ret_code"]
     # print(r)
-    e = time.perf_counter()
-    print(e - s)
     return r['res_list'][0]['score']
 
 
 def get_word_info(selInit, scholar):
+    '''
+    获取词条信息
+    '''
     # 图集图像
     img_xpath = '//div[@class="summary-pic"]//img'
     # 现任职位
@@ -75,12 +82,12 @@ def get_word_info(selInit, scholar):
     base_info_dd_xpath = "//div[contains(@class, 'basic-info')]//dd"
 
     # 符合特征匹配，获取元素
-    img_xpath_el = selInit.browser.find_elements(By.XPATH,img_xpath) # 图像
-    intro_el = selInit.browser.find_elements(By.XPATH, intro_xpath) # 简介
-    intro2_el = selInit.browser.find_elements(By.XPATH, intro2_xpath) # 人物简介2
-    occupation_el = selInit.browser.find_elements(By.XPATH, occupation_xpath) # 职位
-    base_info_dt_el = selInit.browser.find_elements(By.XPATH, base_info_dt_xpath) # basic信息
-    base_info_dd_el = selInit.browser.find_elements(By.XPATH, base_info_dd_xpath) # basic信息
+    img_xpath_el = selInit.browser.find_elements(By.XPATH, img_xpath)  # 图像
+    intro_el = selInit.browser.find_elements(By.XPATH, intro_xpath)  # 简介
+    intro2_el = selInit.browser.find_elements(By.XPATH, intro2_xpath)  # 人物简介2
+    occupation_el = selInit.browser.find_elements(By.XPATH, occupation_xpath)  # 职位
+    base_info_dt_el = selInit.browser.find_elements(By.XPATH, base_info_dt_xpath)  # basic信息
+    base_info_dd_el = selInit.browser.find_elements(By.XPATH, base_info_dd_xpath)  # basic信息
     scholar["data"] = {}
     if base_info_dt_el:
         # 判断基本信息是否存在并抽取
@@ -93,12 +100,14 @@ def get_word_info(selInit, scholar):
     # 获取任务简介
     if intro2_el:
         for el in intro2_el:
+            # print(el)
             pre_el = el.find_elements(By.XPATH, pre_xpath)
             pre_class = etree.HTML(pre_el[0].get_attribute('class')).xpath('string(.)') if pre_el else ""
-            if "basic-info" in pre_class:
+            # print('@'*30+'\n', pre_class, '@'*30+'\n')
+            # if "basic-info" in pre_class:
                 # 当前内容符合人物简介
-                content = get_el_text(el).replace(' ', '')
-                scholar["data"]["简介"] = content
+            content = get_el_text(el).replace(' ', '')
+            scholar["data"]["简介"] = content
     # 写入源url
     scholar["data"]["source_url"] = selInit.browser.current_url
     # 获取简介
@@ -110,7 +119,7 @@ def get_word_info(selInit, scholar):
     # 通过判断title来定位目标标签
     if title_el_list:
         for title_el in title_el_list:
-            title = get_el_text(title_el).replace(' ', '').replace('播报', '').replace('编辑', '').replace(scholar["name"], '').replace('\n', '')
+            title = get_el_text(title_el).replace(' ', '').replace('播报', '').replace('编辑', '').replace(scholar["inventor_name"], '').replace('\n', '')
             content_el_list = title_el.find_elements(By.XPATH, t_content_xpath)
             # TODO 截断到下一个title之前，故要把每个的属性拿出来判断是否是title，是则退出
             for content_el in content_el_list:
@@ -133,13 +142,12 @@ def check_word(selInit, scholar):
     # 检查是否是多义词(默认选第一个)
     polysemy_xpath = '//li[contains(@class,"list-dot")]//a'
     polysemy_xpath_2 = '//div[contains(@class, "polysemant-list")]//li/a'
-    polysemy_list = selInit.browser.find_elements(By.XPATH,polysemy_xpath)
-    polysemy_list_2 = selInit.browser.find_elements(By.XPATH,polysemy_xpath_2)
+    polysemy_list = selInit.browser.find_elements(By.XPATH, polysemy_xpath)
+    polysemy_list_2 = selInit.browser.find_elements(By.XPATH, polysemy_xpath_2)
 
     # 定位百科内容
     content_xpath = "//div[@class='content-wrapper']"
     new_scholar_list = []
-    # TODO 判断是否是多义词
 
     list_cost, check_cost = 0, 0
     start = time.perf_counter()
@@ -148,110 +156,79 @@ def check_word(selInit, scholar):
         if polysemy_list:
             # ==> 直接弹出多义选项的情况
             # 遍历多义选项，查看标题是否是否符合特征
-            tmp_crawl_url_list = []
+
             # 存储所有候选多义词条
             candidates = []
             item2url = {}
             for item in polysemy_list:
                 try:
                     if item:
-                        item_title = etree.HTML(item.get_attribute('innerHTML')).xpath('string(.)').replace(scholar["inventor_name"], '')
+                        item_title = etree.HTML(item.get_attribute('innerHTML')).xpath('string(.)').\
+                            replace(scholar["inventor_name"], '')
                         url = etree.HTML(item.get_attribute('href')).xpath('string(.)')
                         # ------------------------gpt3.5-turbo匹配------------------------
                         candidates.append(item_title)
                         item2url[item_title] = url
 
-                        # ------------------------texsmart匹配------------------------
-                #         # print(item_title)
-                #         company_name = scholar['scholar_institute'].strip('有限公司')
-                #         company_name = scholar['scholar_institute'].strip('公司')
-                #         flag = False
-                #         if '中国科学院' in company_name or '中国科学院' in item_title:
-                #             company_name = company_name.strip('中国科学院')
-                #             item_title = item_title.strip('中国科学院')
-                #             flag = True
-                #         check_start = time.perf_counter()
-                #         esim_sim, linkage_sim = texsmart_query(company_name, item_title, 'esim_sim'), texsmart_query(company_name, item_title, 'linkage')
-                #         check_end = time.perf_counter()
-                #         print(check_end - check_start)
-                #         check_cost += check_end - check_start
-                #         sim = esim_sim * 0.65 + linkage_sim * 0.35
-                #         if sim <= 0.2:
-                #             continue
-                #         if sim <= 0.35 and flag: #含有中科院的内容 相似度要求高一些
-                #             continue
-                #         tmp_crawl_url_list.append((url,sim))
                 except Exception as e:
-                    print("err：循环匹配多义词条出错--->", str(e))
+                    print("err：循环匹配多义词条出错--->", e)
                     continue
-            # ------------------------gpt3.5-turbo匹配------------------------
-            print(item2url)
+            # ------------------------Sbert + Texsmart------------------------
             check_start = time.perf_counter()
-            check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
-            answer = openai_query(check_prompt, get_key())
-            print(answer)
-            # 处理gpt-api的返回结果
-            try:
-                return_json = eval(answer)
-                if return_json['code'] == 'succ':
-                    choose_sentence = return_json['sentence']
-                    choose_url = item2url[choose_sentence]
-                    selInit.page_parse(url=choose_url)
-                    time_sleep(1, 2)
-                    # TODO 抽取页面数据
-                    new_scholar = get_word_info(selInit, scholar)
-                    new_scholar_list.append(new_scholar)
-                else:
-                    # 未有特征匹配上的词条，退出
-                    scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
-                    new_scholar_list.append(scholar)
-            except Exception as e:
-                print(f'gpt返回结果格式错误: {answer}\n'+str(e))
+            sim_preprocess_list = top5_sim_sentence(scholar['full_name'], candidates)
+            print(sim_preprocess_list)
+            sim_final_list = []
+            for candidate in sim_preprocess_list:
+                sim = texsmart_query(scholar['short_name'], candidate, 'linkage') * 0.5 + \
+                      texsmart_query(scholar['short_name'], candidate, 'esim') * 0.5
+                if sim > 0.3:
+                    sim_final_list.append((candidate, sim))
             check_end = time.perf_counter()
             check_cost += check_end - check_start
-
-            # ------------------------texsmart匹配------------------------
-            # if tmp_crawl_url_list:
-            #     tmp_crawl_url_list.sort(key=lambda pair: pair[1], reverse=True)
-            #     fi = tmp_crawl_url_list[0] # fi => (url, sim_score)
-            #     # 有特征匹配上的词条，解析url 开始抽取
-            #     if fi[1] > 0.3:
-            #         selInit.page_parse(url=fi[0])
-            #         time_sleep(1, 2)
-            #         # TODO 抽取页面数据
-            #         new_scholar = get_word_info(selInit, scholar)
-            #         new_scholar_list.append(new_scholar)
-            #     # 根据页面相关摘要在此判断是否相关
-            #     else:
-            #         selInit.page_parse(url=fi[0])
-            #         time_sleep(1, 2)
-            #         tmp_scholar = {'id': scholar['id'], 'name': scholar['name'], 'scholar_institute': scholar['scholar_institute'], 'simply_institute': scholar['simply_institute']}
-            #         get_word_info(selInit, tmp_scholar)
-            #         intro = tmp_scholar["data"]["intro"]
-            #         q = f'当前任职于{tmp_scholar["scholar_institute"]}, 为其科研人员。'
-            #         check_start = time.perf_counter()
-            #         esim_sim, linkage_sim = texsmart_query(q, intro, 'esim'), texsmart_query(q, intro, 'linkage')
-            #         check_end = time.perf_counter()
-            #         print(check_end - check_start)
-            #         check_cost += check_end - check_start
-            #         sim = esim_sim
-            #         print(scholar['name'], scholar['scholar_institute'], sim)
-            #         if sim > 0.25:
-            #             new_scholar_list.append(tmp_scholar)
+            sim_final_list.sort(key=lambda x: x[1], reverse=True)
+            if sim_final_list:
+                sim_url = item2url[sim_final_list[0][0]]
+                new_scholar = get_word_info(selInit, scholar)
+                new_scholar_list.append(new_scholar)
+            else:
+                # 未有特征匹配上的词条，退出
+                scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
+                new_scholar_list.append(scholar)
+            # ------------------------gpt3.5-turbo匹配------------------------
+            # # print(item2url)
+            # check_start = time.perf_counter()
+            # check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
+            # answer = openai_query(check_prompt, get_key())
+            # # print(answer)
+            # # 处理gpt-api的返回结果
+            # answer = answer.replace('[', '')
+            # answer = answer.replace(']', '')
+            # try:
+            #     return_json = eval(answer)
+            #     if return_json['code'] == 'succ':
+            #         choose_sentence = return_json['sentence']
+            #         sim = texsmart_query(scholar['full_name'], choose_sentence, 'esim') * 0.5 + \
+            #             texsmart_query(scholar['full_name'], choose_sentence, 'linkage') * 0.5
+            #         if sim > 0.35:
+            #             choose_url = item2url[choose_sentence]
+            #             selInit.page_parse(url=choose_url)
+            #             time_sleep(1, 2)
+            #             new_scholar = get_word_info(selInit, scholar)
+            #             new_scholar_list.append(new_scholar)
             #         else:
-            #             # 未有特征匹配上的词条，退出
-            #             scholar["is_exist"] = 1
-            #             scholar["log"] = "当前词条是多义词，未有词条匹配"
+            #             scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
             #             new_scholar_list.append(scholar)
-            # else:
-            #     # 未有特征匹配上的词条，退出
-            #     scholar["is_exist"] = 1
-            #     scholar["log"] = "当前词条是多义词，未有词条匹配"
-            #     new_scholar_list.append(scholar)
+            #     else:
+            #         # 未有特征匹配上的词条，退出
+            #         scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
+            #         new_scholar_list.append(scholar)
+            # except Exception as e:
+            #     print(f'gpt返回结果格式错误: {answer}\n', e)
+            # check_end = time.perf_counter()
+            # check_cost += check_end - check_start
 
         if polysemy_list_2:
             # ==> 直接进入词条页面，但还是多义词的情况
-            # TODO 先匹配当前页全文，查看是否符合特征
             cur_title_xpath = '//div[@class="lemma-desc"]'
             cur_title_el = selInit.browser.find_elements(By.XPATH, cur_title_xpath)
             cur_title = get_el_text(cur_title_el[0])
@@ -274,58 +251,97 @@ def check_word(selInit, scholar):
                 except Exception as e:
                     print("err：循环匹配多义词条出错--->", str(e))
                     continue
-            # ------------------------gpt3.5-turbo匹配------------------------
-            print(item2url)
+            # ------------------------Sbert + Texsmart------------------------
             check_start = time.perf_counter()
-            check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
-            print(check_prompt)
-            answer = openai_query(check_prompt, get_key())
-            # 处理gpt-api的返回结果
-            try:
-                return_json = eval(answer)
-                if return_json['code'] == 'succ':
-                    choose_sentence = return_json['sentence']
-                    choose_url = item2url[choose_sentence]
-                    selInit.page_parse(url=choose_url)
-                    time_sleep(1, 2)
-                    # TODO 抽取页面数据
-                    new_scholar = get_word_info(selInit, scholar)
-                    new_scholar_list.append(new_scholar)
-                else:
-                    # 未有特征匹配上的词条，退出
-                    scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
-                    new_scholar_list.append(scholar)
-            except Exception as e:
-                print(f'gpt返回结果格式错误: {answer}\n' + str(e))
+            sim_preprocess_list = top5_sim_sentence(scholar['full_name'], candidates)
+            print(sim_preprocess_list)
+            sim_final_list = []
+            for candidate in sim_preprocess_list:
+                sim = texsmart_query(scholar['short_name'], candidate, 'linkage') * 0.5 + \
+                      texsmart_query(scholar['short_name'], candidate, 'esim') * 0.5
+                if sim > 0.3:
+                    sim_final_list.append((candidate, sim))
             check_end = time.perf_counter()
             check_cost += check_end - check_start
+            sim_final_list.sort(key=lambda x: x[1], reverse=True)
+            if sim_final_list:
+                sim_url = item2url[sim_final_list[0][0]]
+                new_scholar = get_word_info(selInit, scholar)
+                new_scholar_list.append(new_scholar)
+            else:
+                # 未有特征匹配上的词条，退出
+                scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
+                new_scholar_list.append(scholar)
+            # ------------------------gpt3.5-turbo匹配------------------------
+            # print(item2url)
+            # check_start = time.perf_counter()
+            # check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
+            # # print(check_prompt)
+            # answer = openai_query(check_prompt, get_key())
+            # # 处理gpt-api的返回结果
+            # answer = answer.replace('[', '')
+            # answer = answer.replace(']', '')
+            # try:
+            #     return_json = eval(answer)
+            #     if return_json['code'] == 'succ':
+            #         choose_sentence = return_json['sentence']
+            #         sim = texsmart_query(scholar['full_name'], choose_sentence, 'esim') * 0.5 + \
+            #             texsmart_query(scholar['full_name'], choose_sentence, 'linkage') * 0.5
+            #         if sim > 0.35:
+            #             choose_url = item2url[choose_sentence]
+            #             selInit.page_parse(url=choose_url)
+            #             time_sleep(1, 2)
+            #             # TODO 抽取页面数据
+            #             new_scholar = get_word_info(selInit, scholar)
+            #             new_scholar_list.append(new_scholar)
+            #         else:
+            #             scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
+            #             new_scholar_list.append(scholar)
+            #     else:
+            #         # 未有特征匹配上的词条，退出
+            #         scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
+            #         new_scholar_list.append(scholar)
+            # except Exception as e:
+            #     print(f'gpt返回结果格式错误: {answer}\n' + str(e))
+            # check_end = time.perf_counter()
+            # check_cost += check_end - check_start
 
     else:
         # TODO 单义词 查看是否符合特征
         cur_title_xpath = '//div[@class="lemma-desc"]'
         cur_title_el = selInit.browser.find_elements(By.XPATH, cur_title_xpath)
         cur_title = get_el_text(cur_title_el[0]) if cur_title_el else ''
-
-        # ------------------------gpt3.5-turbo匹配------------------------
-        candidates = [cur_title]
+        # ------------------------Texsmart匹配------------------------
         check_start = time.perf_counter()
-        check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
-        answer = openai_query(check_prompt, get_key())
-        # 处理gpt-api的返回结果
-        try:
-            return_json = eval(answer)
-            if return_json['code'] == 'succ':
-                choose_sentence = return_json['sentence']
-                time_sleep(1, 2)
-                # TODO 抽取页面数据
-                new_scholar = get_word_info(selInit, scholar)
-                new_scholar_list.append(new_scholar)
-            else:
-                # 未有特征匹配上的词条，退出
-                scholar["baike_search_log"] = "当前词条是单义词，未有词条匹配"
-                new_scholar_list.append(scholar)
-        except Exception as e:
-            print(f'gpt返回结果格式错误: {answer}\n' + str(e))
+        sim = texsmart_query(scholar['short_name'], cur_title, 'linkage') * 0.5 + \
+              texsmart_query(scholar['short_name'], cur_title, 'esim') * 0.5
+        check_end = time.perf_counter()
+        check_cost += check_end - check_start
+        # # ------------------------gpt3.5-turbo匹配------------------------
+        # candidates = [cur_title]
+        # check_start = time.perf_counter()
+        # check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
+        # answer = openai_query(check_prompt, get_key())
+        # check_end = time.perf_counter()
+        # check_cost += check_end - check_start
+        # answer = answer.replace('[', '')
+        # answer = answer.replace(']', '')
+        # # 处理gpt-api的返回结果
+        # try:
+        #     return_json = eval(answer)
+        #     if return_json['code'] == 'succ':
+        #         # print(return_json)
+        #         # choose_sentence = return_json['sentence']
+        #         # TODO 抽取页面数据
+        #         # print(selInit.browser.current_url)
+        #         new_scholar = get_word_info(selInit, scholar)
+        #         new_scholar_list.append(new_scholar)
+        #     else:
+        #         # 未有特征匹配上的词条，退出
+        #         scholar["baike_search_log"] = "当前词条是单义词，未有词条匹配"
+        #         new_scholar_list.append(scholar)
+        # except Exception as e:
+        #     print(f'gpt返回结果格式错误: {answer}\n', e)
 
     end = time.perf_counter()
     list_cost = end - start
@@ -334,7 +350,6 @@ def check_word(selInit, scholar):
     print('=' * 30 + '查询相似度耗时' + '=' * 30)
     print(check_cost)
 
-    print(new_scholar_list)
     return new_scholar_list
 
 
@@ -440,11 +455,12 @@ def baike_info_get_run(experts_list):
                 expert['awards'] = expert['baike_info']['学术兼职：']
 
         insert_data(scholar_info_list)
-        print('=' * 30)
+        print(expert)
+        # print('=' * 30)
 
     selInit.close_browser()
 
 
 if __name__ == '__main__':
-    # baike_info_get_run()
+    baike_info_get_run([{'inventor_id': 18447, 'inventor_name': '张万舟', 'full_name': '太原理工大学', 'short_name': '太原理工大学'}])
     pass

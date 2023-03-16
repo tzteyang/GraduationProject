@@ -31,7 +31,7 @@ info_headers = {
 }
 
 
-def get_value(html,path):
+def get_value(html, path):
     try:
         value = html.xpath(path)[0]
     except Exception as e:
@@ -401,11 +401,12 @@ def expert_detail_query3(expert_name, expert_company):
         esim_sim, linkage_sim = texsmart_query(el, expert_com, 'esim'), texsmart_query(el, expert_com, 'linkage')
         sim = 0.5 * esim_sim + 0.5 * linkage_sim
         # ------相似度中间结果------
+        print('=' * 30 + '\n学者库匹配相似性......')
         print(el, expert_com, esim_sim, linkage_sim)
         print('=' * 30)
         if sim > 0.35:
             link = cnki_prefix + ul.xpath('.//div[@class="el-link"]//a/@href')[0]
-            link_list.append((link, sim_rate))
+            link_list.append((link, sim))
     print(link_list)
     if not link_list:
         return None

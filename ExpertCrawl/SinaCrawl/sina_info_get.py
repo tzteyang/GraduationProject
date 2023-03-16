@@ -73,18 +73,16 @@ def sina_info_get_run(experts_list):
         for res in results:
             if res['company_name'] == '':
                 continue
+            sim = 0.0
             try:
-                short_institute, short_company = get_short_name(institute), get_short_name(res['company_name'])
+                sim1, sim2 = texsmart_query(institute, res['company_name'], 'esim'), texsmart_query(institute, res['company_name'], 'linkage')
+                sim = sim1 * 0.5 + sim2 * 0.5
+                print(institute, res['company_name'], sim)
             except Exception as e:
-                print(f'\n简称处理错误: {e}')
-                continue
-            if short_institute == '' or short_company == '':
-                continue
-            sim1, sim2 = texsmart_query(short_institute, short_company, 'esim'), texsmart_query(short_institute, short_company, 'linkage')
-            sim = sim1 * 0.5 + sim2 * 0.5
+                print(f'Texsmart请求失败:\n{e}')
             cv_info = res['cv']
 
-            if sim > 0.45 or short_institute in cv_info:
+            if sim > 0.45:
                 expert['position'] = res['position']
                 expert['nationality'] = res['nationality']
                 expert['cv'] = res['cv']
