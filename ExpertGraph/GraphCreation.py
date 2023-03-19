@@ -14,7 +14,7 @@ sys.path.append(BASE_DIR)
 DATA_DIR = BASE_DIR + '/experts_ipcs_output/experts_ipcs_info.json'
 WRITE_DIR = BASE_DIR + '/experts_ipcs_output/experts_graph.gml'
 IPC_WRITE_DIR = BASE_DIR + '/experts_ipcs_output/ipcs_info.json'
-print(BASE_DIR)
+# print(BASE_DIR)
 
 G = nx.Graph()
 

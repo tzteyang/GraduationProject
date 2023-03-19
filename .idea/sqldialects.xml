@@ -4,6 +4,7 @@
     <file url="file://$PROJECT_DIR$/ExpertCrawl/ExpertCrawlRun.py" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/ExpertCrawl/SinaCrawl/sina_info_get.py" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/ExpertCrawl/write_expert_company_database.py" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/ExpertGraph/Graph2Database.py" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/ExpertGraph/GraphCreation.py" dialect="MySQL" />
   </component>
 </project>
