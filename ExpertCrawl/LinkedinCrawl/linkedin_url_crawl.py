@@ -134,7 +134,7 @@ def search_results_get(window, info: dict):
                     sim = check_sim(info_company, company)
                     # print('\n' + '=' * 15 + '相似度' + '=' * 15)
                     # print(info_company, company, sim)
-                    if info_company in company or sim > 0.33:
+                    if info_company in company or sim > 0.35:
                         search_info['score'] = sim + (10 - rank) * 0.05
                         search_info['url'] = url_el[0].text if url_el else ''
                         search_info['linkedin_position'] = position
@@ -146,7 +146,7 @@ def search_results_get(window, info: dict):
                         abstract = abstract[:d]
                         # print(abstract)
                         sim = check_sim(info_company, abstract)
-                        if info_company in abstract or sim > 0.27:
+                        if info_company in abstract or sim > 0.3:
                             search_info['score'] = sim + (10 - rank) * 0.05
                             search_info['url'] = url_el[0].text if url_el else ''
                             search_info['linkedin_position'] = position

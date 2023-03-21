@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
+
 class selenium_entity():
 
     def __init__(self, **kwargs):
@@ -10,6 +11,9 @@ class selenium_entity():
         self.headless = kwargs.get('headless')
         self.options = webdriver.ChromeOptions()
         self.options.add_experimental_option('detach', True)  #不自动关闭浏览器
+        self.options.add_argument('--incognito')
+        self.options.add_argument("--disable-extensions")
+        self.options.add_experimental_option("excludeSwitches", ['enable-automation']);
         if self.headless:
             self.options.add_argument('--headless')
             self.options.add_argument('--disable-gpu')

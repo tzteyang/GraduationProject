@@ -14,7 +14,7 @@ sys.path.append(BASE_DIR)
 DATA_DIR = BASE_DIR + '/experts_ipcs_output/experts_ipcs_info.json'
 WRITE_DIR = BASE_DIR + '/experts_ipcs_output/experts_graph.gml'
 IPC_WRITE_DIR = BASE_DIR + '/experts_ipcs_output/ipcs_info.json'
-# print(BASE_DIR)
+path = BASE_DIR + '/experts_ipcs_output/co_network.sif'
 
 G = nx.Graph()
 
@@ -105,6 +105,13 @@ def test():
     G = nx.read_gml(WRITE_DIR, label='label')
     print('='*15+'图读取完成'+'='*15)
     print(G.number_of_nodes())
+    nx.write_graphml(G, "co_network.graphml")
+    # pos = nx.shell_layout(G)
+    # 绘制网络图
+    # nx.draw(G, pos, with_labels=True)
+    # 显示图片
+    # plt.show()
+    # nx.write_edgelist(G, path)
     # print(len(list(nx.connected_components(G))))
     # cc = list(nx.connected_components(G))
     # for i, cc in tqdm(enumerate(nx.connected_components(G))):

@@ -24,8 +24,8 @@ class ExpertCrawlRun:
             select inventor_id, inventor_name, full_name, short_name
             from inventors_company
             order by T_index desc 
-            limit 10
-            offset 0
+            limit 1000
+            offset 599
         """
         print('专家列表获取中......')
         self.data_list = db.query_all(sql)
@@ -42,17 +42,17 @@ class ExpertCrawlRun:
         linkedin_cost, cnki_cost, baike_cost = 0, 0, 0
 
         # 创建知网学者库窗口
-        cnki_window = selenium_entity(url='https://expert.cnki.net/', headless=True)
+        cnki_window = selenium_entity(url='https://expert.cnki.net/')
         cnki_window.browser_run()
         login_list = login_list_get()
-        user_login(cnki_window, login_list[1]["account"], login_list[1]["password"])
-
+        user_login(cnki_window, login_list[0]["account"], login_list[0]["password"])
+        Cookies_get()
         for index, expert in enumerate(tqdm(expert_list)):
 
             print(f'\n专家\n {expert}\n 信息开始获取')
             print('@' * 30)
 
-            linkedin_window = selenium_entity(url='https://cn.bing.com/', headless=True)
+            linkedin_window = selenium_entity(url='https://cn.bing.com/')
             linkedin_window.browser_run()
 
             linkedin_start = time.perf_counter()

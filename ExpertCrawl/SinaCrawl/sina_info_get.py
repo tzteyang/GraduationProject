@@ -82,18 +82,18 @@ def sina_info_get_run(experts_list):
                 print(f'Texsmart请求失败:\n{e}')
             cv_info = res['cv']
 
-            if sim > 0.45:
+            if sim > 0.5:
                 expert['position'] = res['position']
                 expert['nationality'] = res['nationality']
                 expert['cv'] = res['cv']
                 expert['sina_url'] = res['url']
                 expert['edu_background'] = res['edu_background']
-                sina_experts_result_list.append(expert)
-    for expert in sina_experts_result_list:
+                sina_experts_result_list.append((expert, sim))
+            sina_experts_result_list.sort(key=lambda x: x[1], reverse=True)
+    for expert in sina_experts_result_list[:1]:
         data_in = json.dumps(expert, ensure_ascii=False)
         with open(write_path, 'a', encoding='utf-8') as f:
-            f.write(data_in)
-            f.write('\n')
+            f.write(data_in + '\n')
 
     local_cursor.close()
     conn.close()

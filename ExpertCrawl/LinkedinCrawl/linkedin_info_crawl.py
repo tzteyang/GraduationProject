@@ -61,6 +61,7 @@ def Cookies_read():
 def Cookies_add(window):
 
     Cookies = eval(Cookies_read())
+    # print(Cookies)
     for cookie in Cookies:
         # print(type(cookie))
         window.browser.add_cookie(cookie)
@@ -74,7 +75,7 @@ def Cookies_get():
     window.browser_run()
     time_sleep(2, 2.5)
     username_el = window.browser.find_elements(By.XPATH, '//*[@id="username"]')[0]
-    username_el.send_keys('15065629195')
+    username_el.send_keys('yuqiyang524@gmail.com')
     time_sleep(0.5, 1)
     password_el = window.browser.find_elements(By.XPATH, '//*[@id="password"]')[0]
     password_el.send_keys('yang.8302')
@@ -94,7 +95,7 @@ def Cookies_get():
 
 
 def linkedin_info_get_run(window, experts_list):
-
+    # Cookies_get()
     write_path = BASE_DIR + f'/experts_info_{current_date}.json'
 
     for expert in experts_list:
@@ -103,18 +104,21 @@ def linkedin_info_get_run(window, experts_list):
             continue
 
         window.browser_run(url=expert['linkedin_url'])
-        time_sleep(0.5, 1)
-        login_el = window.browser.find_elements(By.XPATH, '//a[@data-tracking-control-name="login"]')[0]
-        login_el.click()
-        time_sleep(1.5, 2)
-        username_el = window.browser.find_elements(By.XPATH, '//*[@id="username"]')[0]
-        username_el.send_keys('15065629195')
-        time_sleep(0.5, 0.6)
-        password_el = window.browser.find_elements(By.XPATH, '//*[@id="password"]')[0]
-        password_el.send_keys('yang.8302')
-        time_sleep(0.5, 0.6)
-        confirm_el = window.browser.find_elements(By.XPATH, '//div[@class="login__form_action_container "]')[0]
-        confirm_el.click()
+        Cookies_add(window)
+        time_sleep(1, 1.5)
+        window.browser.refresh()
+        # time_sleep(0.5, 1)
+        # login_el = window.browser.find_elements(By.XPATH, '//a[@data-tracking-control-name="login"]')[0]
+        # login_el.click()
+        # time_sleep(1.5, 2)
+        # username_el = window.browser.find_elements(By.XPATH, '//*[@id="username"]')[0]
+        # username_el.send_keys('yuqiyang524@gmail.com')
+        # time_sleep(0.5, 0.6)
+        # password_el = window.browser.find_elements(By.XPATH, '//*[@id="password"]')[0]
+        # password_el.send_keys('yang.8302')
+        # time_sleep(0.5, 0.6)
+        # confirm_el = window.browser.find_elements(By.XPATH, '//div[@class="login__form_action_container "]')[0]
+        # confirm_el.click()
 
         linkedin_info = {
             'id': expert['inventor_id'],
@@ -207,15 +211,15 @@ def linkedin_info_get_run(window, experts_list):
             if 'degree' in edu_bg:
                 if '博士' in edu_bg['degree']:
                     expert['edu_background'] = '博士'
-                elif 'Doctor' or 'doctor' in edu_bg['degree']:
+                elif ('Doctor' in edu_bg['degree']) or ('doctor' in edu_bg['degree']):
                     expert['edu_background'] = '博士'
                 elif '硕士' in edu_bg['degree']:
                     expert['edu_background'] = '硕士'
-                elif 'Master' or 'master' in edu_bg['degree']:
+                elif ('Master' in edu_bg['degree']) or ('master' in edu_bg['degree']):
                     expert['edu_background'] = '硕士'
                 elif '本科' in edu_bg['degree']:
                     expert['edu_background'] = '本科'
-                elif 'Bachelor' or 'bachelor' in edu_bg['degree']:
+                elif ('Bachelor' in edu_bg['degree']) or ('bachelor' in edu_bg['degree']):
                     expert['edu_background'] = '本科'
         # print(expert)
 

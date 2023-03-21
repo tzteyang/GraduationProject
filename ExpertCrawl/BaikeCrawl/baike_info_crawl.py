@@ -178,9 +178,10 @@ def check_word(selInit, scholar):
             sim_preprocess_list = top5_sim_sentence(scholar['full_name'], candidates)
             print(sim_preprocess_list)
             sim_final_list = []
-            for candidate in sim_preprocess_list:
+            for candidate, tex_sim in sim_preprocess_list:
                 sim = texsmart_query(scholar['short_name'], candidate, 'linkage') * 0.5 + \
                       texsmart_query(scholar['short_name'], candidate, 'esim') * 0.5
+                print('@' * 15 + "百科相似度匹配" + '@' * 15 + '\n', scholar['short_name'], candidate)
                 if sim > 0.3:
                     sim_final_list.append((candidate, sim))
             check_end = time.perf_counter()
@@ -188,6 +189,8 @@ def check_word(selInit, scholar):
             sim_final_list.sort(key=lambda x: x[1], reverse=True)
             if sim_final_list:
                 sim_url = item2url[sim_final_list[0][0]]
+                selInit.page_parse(url=sim_url)
+                time_sleep(1, 2)
                 new_scholar = get_word_info(selInit, scholar)
                 new_scholar_list.append(new_scholar)
             else:
@@ -256,9 +259,10 @@ def check_word(selInit, scholar):
             sim_preprocess_list = top5_sim_sentence(scholar['full_name'], candidates)
             print(sim_preprocess_list)
             sim_final_list = []
-            for candidate in sim_preprocess_list:
+            for candidate, tex_sim in sim_preprocess_list:
                 sim = texsmart_query(scholar['short_name'], candidate, 'linkage') * 0.5 + \
                       texsmart_query(scholar['short_name'], candidate, 'esim') * 0.5
+                print('@' * 15 + "百科相似度匹配" + '@' * 15 + '\n', scholar['short_name'], candidate, sim)
                 if sim > 0.3:
                     sim_final_list.append((candidate, sim))
             check_end = time.perf_counter()
@@ -266,6 +270,8 @@ def check_word(selInit, scholar):
             sim_final_list.sort(key=lambda x: x[1], reverse=True)
             if sim_final_list:
                 sim_url = item2url[sim_final_list[0][0]]
+                selInit.page_parse(url=sim_url)
+                time_sleep(1, 2)
                 new_scholar = get_word_info(selInit, scholar)
                 new_scholar_list.append(new_scholar)
             else:
@@ -317,6 +323,13 @@ def check_word(selInit, scholar):
               texsmart_query(scholar['short_name'], cur_title, 'esim') * 0.5
         check_end = time.perf_counter()
         check_cost += check_end - check_start
+        if sim > 0.3:
+            new_scholar = get_word_info(selInit, scholar)
+            new_scholar_list.append(new_scholar)
+        else:
+            # 未有特征匹配上的词条，退出
+            scholar["baike_search_log"] = "当前词条是单义词，未有词条匹配"
+            new_scholar_list.append(scholar)
         # # ------------------------gpt3.5-turbo匹配------------------------
         # candidates = [cur_title]
         # check_start = time.perf_counter()
@@ -462,5 +475,5 @@ def baike_info_get_run(experts_list):
 
 
 if __name__ == '__main__':
-    baike_info_get_run([{'inventor_id': 18447, 'inventor_name': '张万舟', 'full_name': '太原理工大学', 'short_name': '太原理工大学'}])
+    # baike_info_get_run([{'inventor_id': 18447, 'inventor_name': '张万舟', 'full_name': '太原理工大学', 'short_name': '太原理工大学'}])
     pass
