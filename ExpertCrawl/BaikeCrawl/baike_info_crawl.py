@@ -166,7 +166,6 @@ def check_word(selInit, scholar):
                         item_title = etree.HTML(item.get_attribute('innerHTML')).xpath('string(.)').\
                             replace(scholar["inventor_name"], '')
                         url = etree.HTML(item.get_attribute('href')).xpath('string(.)')
-                        # ------------------------gpt3.5-turbo匹配------------------------
                         candidates.append(item_title)
                         item2url[item_title] = url
 
@@ -174,61 +173,33 @@ def check_word(selInit, scholar):
                     print("err：循环匹配多义词条出错--->", e)
                     continue
             # ------------------------Sbert + Texsmart------------------------
-            check_start = time.perf_counter()
-            sim_preprocess_list = top5_sim_sentence(scholar['full_name'], candidates)
-            print(sim_preprocess_list)
-            sim_final_list = []
-            for candidate, tex_sim in sim_preprocess_list:
-                sim = texsmart_query(scholar['short_name'], candidate, 'linkage') * 0.5 + \
-                      texsmart_query(scholar['short_name'], candidate, 'esim') * 0.5
-                print('@' * 15 + "百科相似度匹配" + '@' * 15 + '\n', scholar['short_name'], candidate)
-                if sim > 0.3:
-                    sim_final_list.append((candidate, sim))
-            check_end = time.perf_counter()
-            check_cost += check_end - check_start
-            sim_final_list.sort(key=lambda x: x[1], reverse=True)
-            if sim_final_list:
-                sim_url = item2url[sim_final_list[0][0]]
-                selInit.page_parse(url=sim_url)
-                time_sleep(1, 2)
-                new_scholar = get_word_info(selInit, scholar)
-                new_scholar_list.append(new_scholar)
-            else:
-                # 未有特征匹配上的词条，退出
+            if not candidates:# 为空tensor转化会报错
                 scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
                 new_scholar_list.append(scholar)
-            # ------------------------gpt3.5-turbo匹配------------------------
-            # # print(item2url)
-            # check_start = time.perf_counter()
-            # check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
-            # answer = openai_query(check_prompt, get_key())
-            # # print(answer)
-            # # 处理gpt-api的返回结果
-            # answer = answer.replace('[', '')
-            # answer = answer.replace(']', '')
-            # try:
-            #     return_json = eval(answer)
-            #     if return_json['code'] == 'succ':
-            #         choose_sentence = return_json['sentence']
-            #         sim = texsmart_query(scholar['full_name'], choose_sentence, 'esim') * 0.5 + \
-            #             texsmart_query(scholar['full_name'], choose_sentence, 'linkage') * 0.5
-            #         if sim > 0.35:
-            #             choose_url = item2url[choose_sentence]
-            #             selInit.page_parse(url=choose_url)
-            #             time_sleep(1, 2)
-            #             new_scholar = get_word_info(selInit, scholar)
-            #             new_scholar_list.append(new_scholar)
-            #         else:
-            #             scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
-            #             new_scholar_list.append(scholar)
-            #     else:
-            #         # 未有特征匹配上的词条，退出
-            #         scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
-            #         new_scholar_list.append(scholar)
-            # except Exception as e:
-            #     print(f'gpt返回结果格式错误: {answer}\n', e)
-            # check_end = time.perf_counter()
-            # check_cost += check_end - check_start
+            else:
+                check_start = time.perf_counter()
+                sim_preprocess_list = top5_sim_sentence(scholar['full_name'], candidates)
+                print(sim_preprocess_list)
+                sim_final_list = []
+                for candidate, tex_sim in sim_preprocess_list:
+                    sim = texsmart_query(scholar['short_name'], candidate, 'linkage') * 0.5 + \
+                          texsmart_query(scholar['short_name'], candidate, 'esim') * 0.5
+                    print('@' * 15 + "百科相似度匹配" + '@' * 15 + '\n', scholar['short_name'], candidate)
+                    if sim > 0.3:
+                        sim_final_list.append((candidate, sim))
+                check_end = time.perf_counter()
+                check_cost += check_end - check_start
+                sim_final_list.sort(key=lambda x: x[1], reverse=True)
+                if sim_final_list:
+                    sim_url = item2url[sim_final_list[0][0]]
+                    selInit.page_parse(url=sim_url)
+                    time_sleep(1, 2)
+                    new_scholar = get_word_info(selInit, scholar)
+                    new_scholar_list.append(new_scholar)
+                else:
+                    # 未有特征匹配上的词条，退出
+                    scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
+                    new_scholar_list.append(scholar)
 
         if polysemy_list_2:
             # ==> 直接进入词条页面，但还是多义词的情况
@@ -255,63 +226,33 @@ def check_word(selInit, scholar):
                     print("err：循环匹配多义词条出错--->", str(e))
                     continue
             # ------------------------Sbert + Texsmart------------------------
-            check_start = time.perf_counter()
-            sim_preprocess_list = top5_sim_sentence(scholar['full_name'], candidates)
-            print(sim_preprocess_list)
-            sim_final_list = []
-            for candidate, tex_sim in sim_preprocess_list:
-                sim = texsmart_query(scholar['short_name'], candidate, 'linkage') * 0.5 + \
-                      texsmart_query(scholar['short_name'], candidate, 'esim') * 0.5
-                print('@' * 15 + "百科相似度匹配" + '@' * 15 + '\n', scholar['short_name'], candidate, sim)
-                if sim > 0.3:
-                    sim_final_list.append((candidate, sim))
-            check_end = time.perf_counter()
-            check_cost += check_end - check_start
-            sim_final_list.sort(key=lambda x: x[1], reverse=True)
-            if sim_final_list:
-                sim_url = item2url[sim_final_list[0][0]]
-                selInit.page_parse(url=sim_url)
-                time_sleep(1, 2)
-                new_scholar = get_word_info(selInit, scholar)
-                new_scholar_list.append(new_scholar)
-            else:
-                # 未有特征匹配上的词条，退出
+            if not candidates: # 为空会错误tensor无法被转化
                 scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
                 new_scholar_list.append(scholar)
-            # ------------------------gpt3.5-turbo匹配------------------------
-            # print(item2url)
-            # check_start = time.perf_counter()
-            # check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
-            # # print(check_prompt)
-            # answer = openai_query(check_prompt, get_key())
-            # # 处理gpt-api的返回结果
-            # answer = answer.replace('[', '')
-            # answer = answer.replace(']', '')
-            # try:
-            #     return_json = eval(answer)
-            #     if return_json['code'] == 'succ':
-            #         choose_sentence = return_json['sentence']
-            #         sim = texsmart_query(scholar['full_name'], choose_sentence, 'esim') * 0.5 + \
-            #             texsmart_query(scholar['full_name'], choose_sentence, 'linkage') * 0.5
-            #         if sim > 0.35:
-            #             choose_url = item2url[choose_sentence]
-            #             selInit.page_parse(url=choose_url)
-            #             time_sleep(1, 2)
-            #             # TODO 抽取页面数据
-            #             new_scholar = get_word_info(selInit, scholar)
-            #             new_scholar_list.append(new_scholar)
-            #         else:
-            #             scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
-            #             new_scholar_list.append(scholar)
-            #     else:
-            #         # 未有特征匹配上的词条，退出
-            #         scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
-            #         new_scholar_list.append(scholar)
-            # except Exception as e:
-            #     print(f'gpt返回结果格式错误: {answer}\n' + str(e))
-            # check_end = time.perf_counter()
-            # check_cost += check_end - check_start
-
+            else:
+                check_start = time.perf_counter()
+                sim_preprocess_list = top5_sim_sentence(scholar['full_name'], candidates)
+                print(sim_preprocess_list)
+                sim_final_list = []
+                for candidate, tex_sim in sim_preprocess_list:
+                    sim = texsmart_query(scholar['short_name'], candidate, 'linkage') * 0.5 + \
+                          texsmart_query(scholar['short_name'], candidate, 'esim') * 0.5
+                    print('@' * 15 + "百科相似度匹配" + '@' * 15 + '\n', scholar['short_name'], candidate, sim)
+                    if sim > 0.3:
+                        sim_final_list.append((candidate, sim))
+                check_end = time.perf_counter()
+                check_cost += check_end - check_start
+                sim_final_list.sort(key=lambda x: x[1], reverse=True)
+                if sim_final_list:
+                    sim_url = item2url[sim_final_list[0][0]]
+                    selInit.page_parse(url=sim_url)
+                    time_sleep(1, 2)
+                    new_scholar = get_word_info(selInit, scholar)
+                    new_scholar_list.append(new_scholar)
+                else:
+                    # 未有特征匹配上的词条，退出
+                    scholar["baike_search_log"] = "当前词条是多义词，未有词条匹配"
+                    new_scholar_list.append(scholar)
     else:
         # TODO 单义词 查看是否符合特征
         cur_title_xpath = '//div[@class="lemma-desc"]'
@@ -330,31 +271,6 @@ def check_word(selInit, scholar):
             # 未有特征匹配上的词条，退出
             scholar["baike_search_log"] = "当前词条是单义词，未有词条匹配"
             new_scholar_list.append(scholar)
-        # # ------------------------gpt3.5-turbo匹配------------------------
-        # candidates = [cur_title]
-        # check_start = time.perf_counter()
-        # check_prompt = prompt_pretreatment(scholar['full_name'], candidates)
-        # answer = openai_query(check_prompt, get_key())
-        # check_end = time.perf_counter()
-        # check_cost += check_end - check_start
-        # answer = answer.replace('[', '')
-        # answer = answer.replace(']', '')
-        # # 处理gpt-api的返回结果
-        # try:
-        #     return_json = eval(answer)
-        #     if return_json['code'] == 'succ':
-        #         # print(return_json)
-        #         # choose_sentence = return_json['sentence']
-        #         # TODO 抽取页面数据
-        #         # print(selInit.browser.current_url)
-        #         new_scholar = get_word_info(selInit, scholar)
-        #         new_scholar_list.append(new_scholar)
-        #     else:
-        #         # 未有特征匹配上的词条，退出
-        #         scholar["baike_search_log"] = "当前词条是单义词，未有词条匹配"
-        #         new_scholar_list.append(scholar)
-        # except Exception as e:
-        #     print(f'gpt返回结果格式错误: {answer}\n', e)
 
     end = time.perf_counter()
     list_cost = end - start

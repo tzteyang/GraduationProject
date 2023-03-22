@@ -7,7 +7,7 @@ class selenium_entity():
 
     def __init__(self, **kwargs):
 
-        self.url = kwargs.get('url')
+        self.url = kwargs.get('url', '')
         self.headless = kwargs.get('headless')
         self.options = webdriver.ChromeOptions()
         self.options.add_experimental_option('detach', True)  #不自动关闭浏览器
@@ -23,7 +23,7 @@ class selenium_entity():
     def browser_run(self, **kwargs):
 
         if kwargs:
-            self.browser.get(kwargs.get('url'))
+            self.browser.get(kwargs.get('url', ''))
         else:
             self.browser.get(self.url)
 

@@ -24,8 +24,8 @@ class ExpertCrawlRun:
             select inventor_id, inventor_name, full_name, short_name
             from inventors_company
             order by T_index desc 
-            limit 1000
-            offset 599
+            limit 400
+            offset 649
         """
         print('专家列表获取中......')
         self.data_list = db.query_all(sql)
@@ -45,7 +45,7 @@ class ExpertCrawlRun:
         cnki_window = selenium_entity(url='https://expert.cnki.net/')
         cnki_window.browser_run()
         login_list = login_list_get()
-        user_login(cnki_window, login_list[0]["account"], login_list[0]["password"])
+        user_login(cnki_window, login_list[1]["account"], login_list[1]["password"])
         Cookies_get()
         for index, expert in enumerate(tqdm(expert_list)):
 
