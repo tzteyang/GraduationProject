@@ -1,5 +1,13 @@
 [
     {
+        "account": "xxgcyang@163.com",
+        "password": "yang8302"
+    },
+    {
+        "account": "201911010221@stu.sdnu.edu.cn",
+        "password": "yang8302"
+    },
+    {
         "account": "15065629195",
         "password": "yang8302"
     },
@@ -8,15 +16,7 @@
         "password": "yang.8302"
     },
     {
-        "account": "xxgcyang@163.com",
-        "password": "yang8302"
-    },
-    {
         "account": "tzteyang777@163.com",
-        "password": "yang8302"
-    },
-    {
-        "account": "201911010221@stu.sdnu.edu.cn",
         "password": "yang8302"
     }
 ]

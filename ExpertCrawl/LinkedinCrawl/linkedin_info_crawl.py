@@ -3,6 +3,7 @@ from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from ExpertCrawl.utils.selenium_tool import selenium_entity
 import time
 import random
 from lxml import etree
@@ -13,32 +14,6 @@ from pathlib import Path
 BASE_DIR = str(Path(__file__).resolve().parent)
 sys.path.append(BASE_DIR)
 current_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-
-class selenium_entity():
-
-    def __init__(self, **kwargs):
-
-        self.url = kwargs.get('url')
-        self.headless = kwargs.get('headless')
-        self.options = webdriver.ChromeOptions()
-        self.options.add_experimental_option('detach', True)  #不自动关闭浏览器
-        if self.headless:
-            self.options.add_argument('--headless')
-            self.options.add_argument('--disable-gpu')
-
-        self.browser = webdriver.Chrome(options=self.options)
-
-    def browser_run(self, **kwargs):
-
-        if kwargs:
-            self.browser.get(kwargs.get('url'))
-        else:
-            self.browser.get(self.url)
-
-    def browser_close(self):
-
-        self.browser.close()
-
 
 def time_sleep(a, b):
     '''
@@ -88,7 +63,7 @@ def Cookies_get():
     login_path = BASE_DIR + '/login_cookies.txt'
 
     Cookies = window.browser.get_cookies()
-    with open(login_path,mode='w') as f:
+    with open(login_path, mode='w') as f:
         f.write(str(Cookies))
 
     window.browser_close()
@@ -104,6 +79,7 @@ def linkedin_info_get_run(window, experts_list):
             continue
 
         window.browser_run(url=expert['linkedin_url'])
+        time_sleep(1.75, 2)
         Cookies_add(window)
         time_sleep(1, 1.5)
         window.browser.refresh()

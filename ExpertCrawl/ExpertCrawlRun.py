@@ -24,8 +24,8 @@ class ExpertCrawlRun:
             select inventor_id, inventor_name, full_name, short_name
             from inventors_company
             order by T_index desc 
-            limit 400
-            offset 649
+            limit 500
+            offset 1229
         """
         print('专家列表获取中......')
         self.data_list = db.query_all(sql)
@@ -45,24 +45,28 @@ class ExpertCrawlRun:
         cnki_window = selenium_entity(url='https://expert.cnki.net/')
         cnki_window.browser_run()
         login_list = login_list_get()
-        user_login(cnki_window, login_list[1]["account"], login_list[1]["password"])
+        user_login(cnki_window, login_list[0]["account"], login_list[0]["password"])
         Cookies_get()
         for index, expert in enumerate(tqdm(expert_list)):
 
             print(f'\n专家\n {expert}\n 信息开始获取')
             print('@' * 30)
-
-            linkedin_window = selenium_entity(url='https://cn.bing.com/')
-            linkedin_window.browser_run()
-
-            linkedin_start = time.perf_counter()
-            # 领英主页地址
-            linkedin_url_get_run(linkedin_window, [expert])
-            # 领英主页信息
-            linkedin_info_get_run(linkedin_window, [expert])
-            linkedin_window.browser_close()
-            linkedin_end = time.perf_counter()
-            linkedin_cost += linkedin_end - linkedin_start
+            linkedin_err = False
+            try:
+                linkedin_window = selenium_entity(url='https://cn.bing.com/')
+                linkedin_window.browser_run()
+            except Exception as e:
+                print(f'当前专家领英解析异常: {str(e)}')
+                linkedin_err = True
+            if not linkedin_err:
+                linkedin_start = time.perf_counter()
+                # 领英主页地址
+                linkedin_url_get_run(linkedin_window, [expert])
+                # 领英主页信息
+                linkedin_info_get_run(linkedin_window, [expert])
+                linkedin_window.browser_close()
+                linkedin_end = time.perf_counter()
+                linkedin_cost += linkedin_end - linkedin_start
             #
             cnki_start = time.perf_counter()
             # 知网学者库主页地址

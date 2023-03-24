@@ -50,12 +50,15 @@ def texsmart_query(q1, q2, q_alg):
 
     reg_str = json.dumps(obj).encode()
     url = "https://texsmart.qq.com/api/match_text"
-    r = requests.post(url, data=reg_str).json()
-    ret_code = r["header"]["ret_code"]
+    try:
+        r = requests.post(url, data=reg_str).json()
+        ret_code = r["header"]["ret_code"]
+    except Exception as e:
+        print(f"texsmart匹配出错: {str(e)}")
+        return 0.0
     while ret_code != "succ":
         r = requests.post(url, data=reg_str).json()
         ret_code = r["header"]["ret_code"]
-    # print(r)
 
     return r['res_list'][0]['score']
 

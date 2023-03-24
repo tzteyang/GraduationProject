@@ -41,7 +41,7 @@ def get_el_text(el):
 
 
 def texsmart_query(q1, q2, q_alg):
-    time_sleep(0.5, 1)
+
     obj = {
         'text_pair_list': [{'str1': q1, 'str2': q2}],
         'options': {'alg': q_alg},
@@ -50,13 +50,16 @@ def texsmart_query(q1, q2, q_alg):
 
     reg_str = json.dumps(obj).encode()
     url = "https://texsmart.qq.com/api/match_text"
-    r = requests.post(url, data=reg_str).json()
-    ret_code = r["header"]["ret_code"]
-
+    try:
+        r = requests.post(url, data=reg_str).json()
+        ret_code = r["header"]["ret_code"]
+    except Exception as e:
+        print(f"texsmart匹配出错: {str(e)}")
+        return 0.0
     while ret_code != "succ":
         r = requests.post(url, data=reg_str).json()
         ret_code = r["header"]["ret_code"]
-    # print(r)
+
     return r['res_list'][0]['score']
 
 
@@ -166,6 +169,7 @@ def check_word(selInit, scholar):
                         item_title = etree.HTML(item.get_attribute('innerHTML')).xpath('string(.)').\
                             replace(scholar["inventor_name"], '')
                         url = etree.HTML(item.get_attribute('href')).xpath('string(.)')
+                        item_title = item_title.replace('：', '')
                         candidates.append(item_title)
                         item2url[item_title] = url
 
@@ -284,6 +288,7 @@ def check_word(selInit, scholar):
 
 def query_word(scholar, selInit):
     """查询词条"""
+    time_sleep(1, 1.5)
     query_input_el = selInit.browser.find_elements(By.XPATH, '//input[@id="query"]')
     search_el = selInit.browser.find_elements(By.XPATH, '//button[@id="search"]')
     query_input_el[0].send_keys(scholar["inventor_name"])  # 动作：输入
@@ -349,9 +354,18 @@ def baike_info_get_run(experts_list):
                         expert['edu_background'] = info['学历']
                     elif '学位/学历' in info:
                         expert['edu_background'] = info['学位/学历']
+                    if '主要成就' in info:
+                        expert['achievements'] = info['主要成就']
 
             if 'intro' in expert['baike_info'] and expert['baike_info']['intro'] != '':
                 expert['cv'] = expert['baike_info']['intro']
+            elif ('简介' in expert['baike_info']) and expert['baike_info']['简介'] != '':
+                expert['cv'] = expert['baike_info']['简介']
+            elif ('学者简介' in expert['baike_info']) and expert['baike_info']['学者简介'] != '':
+                expert['cv'] = expert['baike_info']['学者简介']
+            elif ('人物简介' in expert['baike_info']) and expert['baike_info']['人物简介'] != '':
+                expert['cv'] = expert['baike_info']['人物简介']
+
             if 'occupation' in expert['baike_info'] and expert['baike_info']['occupation'] != '':
                 expert['position'] = expert['baike_info']['occupation']
 
@@ -366,6 +380,8 @@ def baike_info_get_run(experts_list):
                 expert['expert_experience'] = expert['baike_info']['个人经历']
             elif '人物经历' in expert['baike_info'] and expert['baike_info']['人物经历'] != '':
                 expert['expert_experience'] = expert['baike_info']['人物经历']
+            elif ('人物履历' in expert['baike_info']) and expert['baike_info']['人物履历'] != '':
+                expert['expert_experience'] = expert['baike_info']['人物履历']
 
             if '主要成就' in expert['baike_info'] and expert['baike_info']['主要成就'] != '':
                 expert['achievements'] = expert['baike_info']['主要成就']
@@ -375,6 +391,14 @@ def baike_info_get_run(experts_list):
                 expert['achievements'] = expert['baike_info']['主要贡献']
             elif '主要成果' in expert['baike_info'] and expert['baike_info']['主要成果'] != '':
                 expert['achievements'] = expert['baike_info']['主要成果']
+            elif ('科研成果' in expert['baike_info']) and expert['baike_info']['科研成果'] != '':
+                expert['achievements'] = expert['baike_info']['科研成果']
+            elif ('研究成果' in expert['baike_info']) and expert['baike_info']['研究成果'] != '':
+                expert['achievements'] = expert['baike_info']['研究成果']
+            elif ('科研项目' in expert['baike_info']) and expert['baike_info']['科研项目'] != '':
+                expert['achievements'] = expert['baike_info']['科研项目']
+            elif ('主要贡献' in expert['baike_info']) and expert['baike_info']['主要贡献'] != '':
+                expert['achievements'] = expert['baike_info']['主要贡献']
 
             if '获奖记录' in expert['baike_info'] and expert['baike_info']['获奖记录'] != '':
                 expert['awards'] = expert['baike_info']['获奖记录']
@@ -382,6 +406,12 @@ def baike_info_get_run(experts_list):
                 expert['awards'] = expert['baike_info']['荣誉']
             elif '学术兼职：' in expert['baike_info'] and expert['baike_info']['学术兼职：'] != '':
                 expert['awards'] = expert['baike_info']['学术兼职：']
+            elif ('获奖情况' in expert['baike_info']) and expert['baike_info']['获奖情况'] != '':
+                expert['awards'] = expert['baike_info']['获奖情况']
+            elif ('所获荣誉' in expert['baike_info']) and expert['baike_info']['所获荣誉'] != '':
+                expert['awards'] = expert['baike_info']['所获荣誉']
+            elif ('代表性成果' in expert['baike_info']) and expert['baike_info']['代表性成果'] != '':
+                expert['awards'] = expert['baike_info']['代表性成果']
 
         insert_data(scholar_info_list)
         print(expert)

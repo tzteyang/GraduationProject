@@ -2,16 +2,15 @@ from lxml import etree
 import re
 import time
 import random
-import undetected_chromedriver.v2 as uc
+import undetected_chromedriver as uc
 from fake_useragent import UserAgent
+from selenium.webdriver.common.by import By
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-ua = UserAgent()
-print(ua)
-
-
+# ua = UserAgent()
+# print(ua)
 class SeleniumInit():
     """
     :selenium初始化
@@ -38,8 +37,50 @@ class SeleniumInit():
         chrome_options.add_argument('--password-store=basic')
         chrome_options.add_argument('--no-sandbox')
 
-        self.browser = uc.Chrome(version_main=110, options=chrome_options)
+        flg = False
         
+        try:
+            self.browser = uc.Chrome(version_main=110, options=chrome_options)
+            # self.browser = webdriver.Chrome(options=chrome_options)
+        except Exception as e:
+            print(e)
+            time.sleep(10)
+            cnt = 1
+            while cnt < 10:
+                try:
+                    # self.browser = webdriver.Chrome(options=chrome_options)
+                    self.browser = uc.Chrome(version_main=110, options=chrome_options)
+                except Exception as e:
+                    print(e)
+                    cnt += 1
+                else:
+                    cnt = 10
+                    flg = True
+        else:
+            flg = True
+        
+        if flg is False:
+            self.browser = None
+
+        # self.browser.implicitly_wait(10)
+    # def __init__(self,url,pages, web_source, source_type, source_name_zh) -> None:
+    #     # 服务器版本
+    #     self.url = url
+    #     self.pages = pages
+    #     self.web_source = web_source
+    #     self.source_type = source_type
+    #     chrome_options = Options()
+    #     chrome_options.add_argument(f'--proxy-server=tunnel3.qg.net:15997')
+    #     chrome_options.add_argument('--headless') #无头模式
+    #     chrome_options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    #     chrome_options.add_argument('--window-size=1300,1000')  # 设置窗口大小, 窗口大小会有影响.
+    #     chrome_options.add_argument('Access-Control-Allow-Origin=www.cies.net.cn')
+    #     prefs = {"profile.managed_default_content_settings.images": 2,
+    #                 'permissions.default.stylesheet': 2, 'download.prompt_for_download': True, 'safebrowsing': True}
+    #     # 禁止加载图片和css
+    #     # chrome_options.add_experimental_option("prefs", prefs)
+    #     self.browser = webdriver.Chrome(options=chrome_options)
+
     # def __init__(self,**kwargs):
     #     self.url = kwargs.get("url")
     #     self.page = 1   # 当前页面
@@ -107,4 +148,4 @@ class SeleniumInit():
         '''
         :关闭browser
         '''
-        self.browser.close()
+        self.browser.quit()

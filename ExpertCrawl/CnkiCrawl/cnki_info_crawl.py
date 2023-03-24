@@ -77,7 +77,7 @@ def login_list_get():
 
 
 def cnki_info_get_run(window, experts_list, cur_index):
-    cur_index += 200
+    cur_index += 500
     # 账号列表
     login_list = login_list_get()
 
@@ -86,10 +86,9 @@ def cnki_info_get_run(window, experts_list, cur_index):
         print('@' * 10 + "爬取知网学者库信息中..." + '@' * 10 + '\n', cur_index, p)
         # 每200个专家切换一次账号
         if (cur_index and cur_index % 200 == 0) or (cur_index and cur_index % 25 == 0):
-            # window.browser_close()
-            time_sleep(5, 6)
             # window = selenium_entity(headless=True)
             window.browser_run(url='https://expert.cnki.net/')
+            time_sleep(4, 4.5)
             user_exit(window)
             time_sleep(1, 1.5)
             user_login(window, login_list[p]["account"], login_list[p]["password"])
