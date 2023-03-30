@@ -77,7 +77,7 @@ def login_list_get():
 
 
 def cnki_info_get_run(window, experts_list, cur_index):
-    cur_index += 500
+    cur_index += 250
     # 账号列表
     login_list = login_list_get()
 
