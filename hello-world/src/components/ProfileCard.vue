@@ -37,6 +37,7 @@
 
 <script>
 export default {
+  name: 'ProfileCard',
   data() {
     return {
       expert: {
@@ -62,7 +63,7 @@ export default {
   /* background-color: #dab551; */
   border-radius: 25px;
   padding: 5px;
-  max-width: 700px;
+  min-width: 700px;
   max-height: 230px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   position: relative;

@@ -5,6 +5,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  # 借助扩展flask_cors 允许所有跨域请求
 
+
 @app.route('/')
 def test():
     db = local_db(database='report', datasource='local')
@@ -15,6 +16,7 @@ def test():
 
     db.db_close()
     return response
+
 
 if __name__ == '__main__':
     app.run()

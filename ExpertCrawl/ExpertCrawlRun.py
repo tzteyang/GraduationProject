@@ -24,8 +24,8 @@ class ExpertCrawlRun:
             select inventor_id, inventor_name, full_name, short_name
             from inventors_company
             order by T_index desc 
-            limit 300
-            offset 1470
+            limit 123
+            offset 1877
         """
         print('专家列表获取中......')
         self.data_list = db.query_all(sql)

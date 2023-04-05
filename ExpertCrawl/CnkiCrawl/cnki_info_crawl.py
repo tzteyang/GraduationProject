@@ -77,7 +77,7 @@ def login_list_get():
 
 
 def cnki_info_get_run(window, experts_list, cur_index):
-    cur_index += 250
+    cur_index += 377
     # 账号列表
     login_list = login_list_get()
 
@@ -114,7 +114,11 @@ def cnki_info_get_run(window, experts_list, cur_index):
                 f.write('\n')
             continue
 
-        window.browser_run(url=expert['cnki_url'])
+        try:
+            window.browser_run(url=expert['cnki_url'])
+        except Exception as e:
+            print('专家知网学者库主页请求错误', str(e))
+            continue
         # 等待时间过短会导致专家专利下载等信息未加载完毕
         time_sleep(6, 7)
 
